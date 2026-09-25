@@ -14,6 +14,8 @@ import { Route as AuthedRouteRouteImport } from './routes/_authed/route'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
 import { Route as AuthedIndexRouteImport } from './routes/_authed/index'
+import { Route as AuthedTeamsIndexRouteImport } from './routes/_authed/teams/index'
+import { Route as AuthedTeamsTeamIdRouteImport } from './routes/_authed/teams/$teamId'
 
 const AuthRouteRoute = AuthRouteRouteImport.update({
   id: '/_auth',
@@ -38,16 +40,30 @@ const AuthedIndexRoute = AuthedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthedRouteRoute,
 } as any)
+const AuthedTeamsIndexRoute = AuthedTeamsIndexRouteImport.update({
+  id: '/teams/',
+  path: '/teams/',
+  getParentRoute: () => AuthedRouteRoute,
+} as any)
+const AuthedTeamsTeamIdRoute = AuthedTeamsTeamIdRouteImport.update({
+  id: '/teams/$teamId',
+  path: '/teams/$teamId',
+  getParentRoute: () => AuthedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthedIndexRoute
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
+  '/teams/$teamId': typeof AuthedTeamsTeamIdRoute
+  '/teams/': typeof AuthedTeamsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AuthedIndexRoute
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
+  '/teams/$teamId': typeof AuthedTeamsTeamIdRoute
+  '/teams': typeof AuthedTeamsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -56,12 +72,14 @@ export interface FileRoutesById {
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/register': typeof AuthRegisterRoute
   '/_authed/': typeof AuthedIndexRoute
+  '/_authed/teams/$teamId': typeof AuthedTeamsTeamIdRoute
+  '/_authed/teams/': typeof AuthedTeamsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/register'
+  fullPaths: '/' | '/login' | '/register' | '/teams/$teamId' | '/teams/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/register'
+  to: '/' | '/login' | '/register' | '/teams/$teamId' | '/teams'
   id:
     | '__root__'
     | '/_auth'
@@ -69,6 +87,8 @@ export interface FileRouteTypes {
     | '/_auth/login'
     | '/_auth/register'
     | '/_authed/'
+    | '/_authed/teams/$teamId'
+    | '/_authed/teams/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -113,6 +133,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedIndexRouteImport
       parentRoute: typeof AuthedRouteRoute
     }
+    '/_authed/teams/': {
+      id: '/_authed/teams/'
+      path: '/teams'
+      fullPath: '/teams/'
+      preLoaderRoute: typeof AuthedTeamsIndexRouteImport
+      parentRoute: typeof AuthedRouteRoute
+    }
+    '/_authed/teams/$teamId': {
+      id: '/_authed/teams/$teamId'
+      path: '/teams/$teamId'
+      fullPath: '/teams/$teamId'
+      preLoaderRoute: typeof AuthedTeamsTeamIdRouteImport
+      parentRoute: typeof AuthedRouteRoute
+    }
   }
 }
 
@@ -132,10 +166,14 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 
 interface AuthedRouteRouteChildren {
   AuthedIndexRoute: typeof AuthedIndexRoute
+  AuthedTeamsTeamIdRoute: typeof AuthedTeamsTeamIdRoute
+  AuthedTeamsIndexRoute: typeof AuthedTeamsIndexRoute
 }
 
 const AuthedRouteRouteChildren: AuthedRouteRouteChildren = {
   AuthedIndexRoute: AuthedIndexRoute,
+  AuthedTeamsTeamIdRoute: AuthedTeamsTeamIdRoute,
+  AuthedTeamsIndexRoute: AuthedTeamsIndexRoute,
 }
 
 const AuthedRouteRouteWithChildren = AuthedRouteRoute._addFileChildren(

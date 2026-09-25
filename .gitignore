@@ -13,3 +13,4 @@ __unconfig*
 todos.json
 
 !.scratch/
+src/types/api.d.ts

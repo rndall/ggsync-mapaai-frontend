@@ -4,3 +4,4 @@ yarn.lock
 
 .agents/
 .scratch/
+src/types/api.d.ts

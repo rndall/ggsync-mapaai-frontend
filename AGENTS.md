@@ -11,3 +11,17 @@ Before editing files for a substantial task:
 - Multiple matches: prefer the most specific local skill for the package or concern you are changing; load additional skills only when the task spans multiple packages or concerns.
 
 <!-- intent-skills:end -->
+
+## Agent skills
+
+### Issue tracker
+
+Local markdown files under `.scratch/`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five canonical roles used as-is. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context (`CONTEXT.md` + `docs/adr/` at root). See `docs/agents/domain.md`.

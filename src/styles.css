@@ -170,3 +170,31 @@
     @apply font-sans;
   }
 }
+
+@layer components {
+  .team-card {
+    background:
+      linear-gradient(0deg, rgba(28, 48, 76, 0.16), rgba(28, 48, 76, 0.16)),
+      linear-gradient(
+        90deg,
+        rgba(47, 112, 204, 0.2) 0%,
+        rgba(0, 82, 197, 0) 100%
+      ),
+      linear-gradient(120deg, rgba(0, 0, 0, 0) 70.93%, #081017 70.99%);
+  }
+
+  .my-team-card {
+    background:
+      linear-gradient(0deg, rgba(28, 48, 76, 0.16), rgba(28, 48, 76, 0.16)),
+      linear-gradient(
+        90deg,
+        rgba(255, 174, 0, 0.2) 0%,
+        rgba(0, 82, 197, 0) 100%
+      ),
+      linear-gradient(120deg, rgba(0, 0, 0, 0) 70.93%, #081017 70.99%);
+  }
+}
+
+body {
+  position: relative;
+}

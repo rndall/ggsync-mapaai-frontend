@@ -4,6 +4,7 @@ import { Suspense, useEffect } from 'react'
 import { useInView } from 'react-intersection-observer'
 
 import { Spinner } from '@/components/ui/spinner'
+import AddTeamDrawer from '@/features/teams/components/add-team-drawer'
 import TeamList, {
   TeamListFallback,
   TeamsEmptyState,
@@ -40,6 +41,7 @@ function RouteComponent() {
             Manage esports teams for your scouting network.
           </p>
         </div>
+        <AddTeamDrawer />
       </div>
       <Suspense fallback={<TeamListFallback count={context.teamsPerPage} />}>
         <TeamListContent />

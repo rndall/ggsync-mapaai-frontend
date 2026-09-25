@@ -1,9 +1,46 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { CircleArrowLeft } from 'lucide-react'
+import { Suspense } from 'react'
+
+import { buttonVariants } from '@/components/ui/button'
+// import MapStats from './-components/MapStats'
+import MatchHistory from '@/features/matches/components/match-history'
+import { TeamHeading, TeamHeadingSkeleton } from '@/features/teams/components/team-heading'
+import { teamQueries } from '@/features/teams/queries'
 
 export const Route = createFileRoute('/_authed/teams/$teamId')({
+  context: ({ params }) => ({
+    teamQueryOptions: teamQueries.detail(Number(params.teamId)),
+  }),
+  loader: ({ context }) => {
+    context.queryClient.query({
+      ...context.teamQueryOptions,
+      staleTime: 'static',
+    })
+  },
   component: RouteComponent,
 })
 
 function RouteComponent() {
-  return <div>Hello "/_authed/teams/$teamId"!</div>
+  return (
+    <div className="space-y-6">
+      <Link
+        to="/teams"
+        className={buttonVariants({
+          variant: 'link',
+          className: 'self-start font-sans',
+        })}
+      >
+        <CircleArrowLeft data-icon="inline-start" />
+        Back to Teams
+      </Link>
+      <div className="flex flex-col gap-10">
+        <Suspense fallback={<TeamHeadingSkeleton />}>
+          <TeamHeading />
+        </Suspense>
+        {/* <MapStats /> */}
+      </div>
+      <MatchHistory />
+    </div>
+  )
 }

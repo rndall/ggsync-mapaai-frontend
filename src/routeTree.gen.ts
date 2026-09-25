@@ -15,6 +15,7 @@ import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
 import { Route as AuthedIndexRouteImport } from './routes/_authed/index'
 import { Route as AuthedMatchesIndexRouteImport } from './routes/_authed/matches/index'
+import { Route as AuthedMatchesMatchIdRouteImport } from './routes/_authed/matches/$matchId'
 import { Route as AuthedTeamsIndexRouteImport } from './routes/_authed/teams/index'
 import { Route as AuthedTeamsTeamIdRouteImport } from './routes/_authed/teams/$teamId'
 
@@ -46,6 +47,11 @@ const AuthedMatchesIndexRoute = AuthedMatchesIndexRouteImport.update({
   path: '/matches/',
   getParentRoute: () => AuthedRouteRoute,
 } as any)
+const AuthedMatchesMatchIdRoute = AuthedMatchesMatchIdRouteImport.update({
+  id: '/matches/$matchId',
+  path: '/matches/$matchId',
+  getParentRoute: () => AuthedRouteRoute,
+} as any)
 const AuthedTeamsIndexRoute = AuthedTeamsIndexRouteImport.update({
   id: '/teams/',
   path: '/teams/',
@@ -61,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthedIndexRoute
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
+  '/matches/$matchId': typeof AuthedMatchesMatchIdRoute
   '/teams/$teamId': typeof AuthedTeamsTeamIdRoute
   '/matches/': typeof AuthedMatchesIndexRoute
   '/teams/': typeof AuthedTeamsIndexRoute
@@ -69,6 +76,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthedIndexRoute
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
+  '/matches/$matchId': typeof AuthedMatchesMatchIdRoute
   '/teams/$teamId': typeof AuthedTeamsTeamIdRoute
   '/matches': typeof AuthedMatchesIndexRoute
   '/teams': typeof AuthedTeamsIndexRoute
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/register': typeof AuthRegisterRoute
   '/_authed/': typeof AuthedIndexRoute
+  '/_authed/matches/$matchId': typeof AuthedMatchesMatchIdRoute
   '/_authed/teams/$teamId': typeof AuthedTeamsTeamIdRoute
   '/_authed/matches/': typeof AuthedMatchesIndexRoute
   '/_authed/teams/': typeof AuthedTeamsIndexRoute
@@ -87,9 +96,22 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/login' | '/register' | '/teams/$teamId' | '/matches/' | '/teams/'
+    | '/'
+    | '/login'
+    | '/register'
+    | '/matches/$matchId'
+    | '/teams/$teamId'
+    | '/matches/'
+    | '/teams/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/register' | '/teams/$teamId' | '/matches' | '/teams'
+  to:
+    | '/'
+    | '/login'
+    | '/register'
+    | '/matches/$matchId'
+    | '/teams/$teamId'
+    | '/matches'
+    | '/teams'
   id:
     | '__root__'
     | '/_auth'
@@ -97,6 +119,7 @@ export interface FileRouteTypes {
     | '/_auth/login'
     | '/_auth/register'
     | '/_authed/'
+    | '/_authed/matches/$matchId'
     | '/_authed/teams/$teamId'
     | '/_authed/matches/'
     | '/_authed/teams/'
@@ -151,6 +174,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedMatchesIndexRouteImport
       parentRoute: typeof AuthedRouteRoute
     }
+    '/_authed/matches/$matchId': {
+      id: '/_authed/matches/$matchId'
+      path: '/matches/$matchId'
+      fullPath: '/matches/$matchId'
+      preLoaderRoute: typeof AuthedMatchesMatchIdRouteImport
+      parentRoute: typeof AuthedRouteRoute
+    }
     '/_authed/teams/': {
       id: '/_authed/teams/'
       path: '/teams'
@@ -184,6 +214,7 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 
 interface AuthedRouteRouteChildren {
   AuthedIndexRoute: typeof AuthedIndexRoute
+  AuthedMatchesMatchIdRoute: typeof AuthedMatchesMatchIdRoute
   AuthedTeamsTeamIdRoute: typeof AuthedTeamsTeamIdRoute
   AuthedMatchesIndexRoute: typeof AuthedMatchesIndexRoute
   AuthedTeamsIndexRoute: typeof AuthedTeamsIndexRoute
@@ -191,6 +222,7 @@ interface AuthedRouteRouteChildren {
 
 const AuthedRouteRouteChildren: AuthedRouteRouteChildren = {
   AuthedIndexRoute: AuthedIndexRoute,
+  AuthedMatchesMatchIdRoute: AuthedMatchesMatchIdRoute,
   AuthedTeamsTeamIdRoute: AuthedTeamsTeamIdRoute,
   AuthedMatchesIndexRoute: AuthedMatchesIndexRoute,
   AuthedTeamsIndexRoute: AuthedTeamsIndexRoute,

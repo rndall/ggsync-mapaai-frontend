@@ -90,23 +90,11 @@ export default function UploadMatchForm({
   const [serverErrors, setServerErrors] = useState<Record<string, string[]>>({})
   const [formError, setFormError] = useState<string | null>(null)
 
-  // Team selection options for the color pickers. The scoped endpoint
-  // requires a team context; without one fall back to the teams list.
-  const optionsQuery = useQuery({
-    ...teamQueries.options(teamId ?? ''),
-    enabled: teamId !== undefined && teamId !== '',
-  })
-  const teamsListQuery = useQuery({
-    ...teamQueries.list({ per_page: 100 }),
-    enabled: teamId === undefined || teamId === '',
-  })
+  // Team selection options for the color pickers. The global endpoint
+  // returns the full team list with no identifier required.
+  const optionsQuery = useQuery(teamQueries.options())
 
-  const teams: TeamOption[] = teamId
-    ? (optionsQuery.data?.data ?? [])
-    : (teamsListQuery.data?.data.teams.map((team) => ({
-        id: team.id,
-        name: team.name,
-      })) ?? [])
+  const teams: TeamOption[] = optionsQuery.data?.data ?? []
   const teamName = teamId
     ? teams.find((team) => String(team.id) === teamId)?.name
     : undefined

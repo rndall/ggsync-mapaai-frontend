@@ -15,6 +15,7 @@ import type {
   PerMapStatsView,
 } from './use-per-map-stats-params'
 import { usePerMapStatsParams } from './use-per-map-stats-params'
+import { UtilityStats } from './utility-stats'
 
 // MOCK (replace with the real per-map stats endpoint): the headline win rate
 // stays hardcoded until the stats API exists.
@@ -123,7 +124,7 @@ export default function PerMapStats() {
             {view === 'player' ? (
               <PlayerStats stats={sideStats} />
             ) : (
-              <UtilityComingSoon />
+              <UtilityStats stats={sideStats} />
             )}
             <MinimapPlaceholder
               heat={heat}
@@ -133,22 +134,6 @@ export default function PerMapStats() {
           </div>
         </div>
       </div>
-    </section>
-  )
-}
-
-// Placeholder until the Utility view lands in the next ticket; keeps the
-// Player/Utility tab switchable without faking utility data.
-function UtilityComingSoon() {
-  return (
-    <section
-      aria-label="Utility stats"
-      className="flex flex-col gap-2 rounded-lg border bg-muted/20 p-4 sm:p-6"
-    >
-      <h3 className="font-heading text-lg">Utility</h3>
-      <p className="text-sm text-muted-foreground">
-        Utility breakdown is not available yet.
-      </p>
     </section>
   )
 }

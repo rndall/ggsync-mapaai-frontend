@@ -31,8 +31,8 @@ export function PlayerStats({ stats }: PlayerStatsProps) {
       >
         <h3 className="font-heading text-lg">Top Setups</h3>
         <ol className="flex flex-col">
-          {stats.setups.map((setup, index) => (
-            <SetupRow key={setupKey(setup)} setup={setup} rank={index + 1} />
+          {stats.setups.map((setup) => (
+            <SetupRow key={setupKey(setup)} setup={setup} />
           ))}
         </ol>
       </section>
@@ -66,10 +66,9 @@ function RotationRow({
   )
 }
 
-function SetupRow({ setup, rank }: { setup: SiteSetup; rank: number }) {
+function SetupRow({ setup }: { setup: SiteSetup }) {
   return (
     <li className="flex items-center gap-2 border-t py-2.5 first:border-t-0 first:pt-0 last:pb-0">
-      <span className="w-5 shrink-0 text-sm text-muted-foreground">{rank}</span>
       <span className="flex gap-1.5">
         {setup.a > 0 && <SetupBadge label={`${setup.a}A`} />}
         {setup.b > 0 && <SetupBadge label={`${setup.b}B`} />}

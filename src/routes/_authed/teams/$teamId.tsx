@@ -37,7 +37,7 @@ function RouteComponent() {
         <CircleArrowLeft data-icon="inline-start" />
         Back to Teams
       </Link>
-      <div className="flex flex-col gap-10">
+      <div className="flex flex-col gap-6">
         <Suspense fallback={<TeamHeadingSkeleton />}>
           <TeamHeading />
         </Suspense>

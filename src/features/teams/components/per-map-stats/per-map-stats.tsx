@@ -102,9 +102,9 @@ export default function PerMapStats() {
         <Tabs
           value={view}
           onValueChange={(value) => void setView(value as PerMapStatsView)}
-          className="relative z-10 -mt-[18px] ml-4 sm:ml-6"
+          className="relative z-10 -mt-10 ml-4 sm:ml-6"
         >
-          <TabsList aria-label="View">
+          <TabsList aria-label="View" variant="line">
             <TabsTrigger value="player">Player</TabsTrigger>
             <TabsTrigger value="utility">Utility</TabsTrigger>
           </TabsList>

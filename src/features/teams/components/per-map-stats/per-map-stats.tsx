@@ -4,8 +4,12 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { mapQueries } from '@/features/matches/queries'
 import { teamQueries } from '@/features/teams/queries'
 
+import { MinimapPlaceholder } from './minimap-placeholder'
 import { PerMapStatsBanner } from './per-map-banner'
 import { PerMapStatsFilters } from './per-map-stats-filters'
+import { PER_MAP_STATS_MOCK } from './per-map-stats-mock'
+import { PlayerStats } from './player-stats'
+import { SegmentedControl } from './segmented-control'
 import { usePerMapStatsParams } from './use-per-map-stats-params'
 
 // MOCK (replace with the real per-map stats endpoint): the headline win rate
@@ -13,9 +17,18 @@ import { usePerMapStatsParams } from './use-per-map-stats-params'
 const MAP_WIN_PCT = 100
 
 export default function PerMapStats() {
-  // View/side/heat have no UI yet (later tickets) but stay subscribed inside
-  // the hook so their URL defaults persist from the same module boundary.
-  const { team, setTeam, map, setMap } = usePerMapStatsParams()
+  const {
+    view,
+    setView,
+    side,
+    setSide,
+    heat,
+    setHeat,
+    team,
+    setTeam,
+    map,
+    setMap,
+  } = usePerMapStatsParams()
 
   const teamsQuery = useQuery(teamQueries.options())
   const mapsQuery = useQuery(mapQueries.list())
@@ -31,6 +44,9 @@ export default function PerMapStats() {
       : ''
   const selectedMap =
     maps.find((option) => String(option.id) === selectedMapId) ?? null
+  // All numbers below the banner are typed hardcoded mocks until the stats
+  // endpoint exists; the side toggle only swaps which mock slice renders.
+  const sideStats = PER_MAP_STATS_MOCK[side]
 
   if (teamsQuery.isPending || mapsQuery.isPending) {
     return <PerMapStatsSkeleton />
@@ -70,6 +86,54 @@ export default function PerMapStats() {
         mapName={selectedMap?.name ?? null}
         winPct={MAP_WIN_PCT}
       />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <SegmentedControl
+          label="View"
+          value={view}
+          onChange={(value) => void setView(value)}
+          options={[
+            { value: 'player', label: 'Player' },
+            { value: 'utility', label: 'Utility' },
+          ]}
+        />
+        <SegmentedControl
+          label="Side"
+          value={side}
+          onChange={(value) => void setSide(value)}
+          options={[
+            { value: 'attacking', label: 'Attacking' },
+            { value: 'defending', label: 'Defending' },
+          ]}
+        />
+      </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {view === 'player' ? (
+          <PlayerStats stats={sideStats} />
+        ) : (
+          <UtilityComingSoon />
+        )}
+        <MinimapPlaceholder
+          heat={heat}
+          onHeatChange={(value) => void setHeat(value)}
+          showHeatToggle={view === 'player'}
+        />
+      </div>
+    </section>
+  )
+}
+
+// Placeholder until the Utility view lands in the next ticket; keeps the
+// Player/Utility tab switchable without faking utility data.
+function UtilityComingSoon() {
+  return (
+    <section
+      aria-label="Utility stats"
+      className="flex flex-col gap-2 rounded-lg border bg-card p-4 sm:p-6"
+    >
+      <h3 className="font-heading text-lg">Utility</h3>
+      <p className="text-sm text-muted-foreground">
+        Utility breakdown is not available yet.
+      </p>
     </section>
   )
 }
@@ -88,6 +152,14 @@ function PerMapStatsSkeleton() {
         </div>
       </div>
       <Skeleton className="min-h-48 rounded-lg" />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Skeleton className="h-9 w-44" />
+        <Skeleton className="h-9 w-44" />
+      </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Skeleton className="min-h-72 rounded-lg" />
+        <Skeleton className="aspect-square w-full rounded-lg" />
+      </div>
     </section>
   )
 }

@@ -16,14 +16,10 @@ import {
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
 import { toast } from '@/components/ui/toast'
-import { useCreateMatchText } from '@/features/matches/hooks/use-create-match-text'
-import {
-  describeChunkFailure,
-  parseMatchParams,
-  planVideoUpload,
-} from '@/features/matches/utils/match-submit'
-import { uploadVideoInChunks } from '@/features/matches/utils/video-upload'
+import { useCreateMatchDirect } from '@/features/matches/hooks/use-create-match-direct'
+import { parseMatchParams } from '@/features/matches/utils/match-submit'
 import { teamQueries } from '@/features/teams/queries'
+import type { operations } from '@/types/api'
 import {
   getErrorMessage,
   getFieldErrors,
@@ -82,16 +78,17 @@ type UploadMatchFormProps = {
   onSuccess?: () => void
 }
 
+type StoreDirectMatchBody =
+  operations['match.storeDirect']['requestBody']['content']['multipart/form-data']
+
 export default function UploadMatchForm({
   teamId,
   onSuccess,
 }: UploadMatchFormProps) {
-  const { mutateAsync: createMatchText, isPending: isSendingInfo } =
-    useCreateMatchText()
+  const { mutateAsync: createMatchDirect, isPending: isSubmitting } =
+    useCreateMatchDirect()
   const [serverErrors, setServerErrors] = useState<Record<string, string[]>>({})
   const [formError, setFormError] = useState<string | null>(null)
-  const [isUploadingVideo, setIsUploadingVideo] = useState(false)
-  const isSubmitting = isSendingInfo || isUploadingVideo
 
   // Team selection options for the color pickers. The scoped endpoint
   // requires a team context; without one fall back to the teams list.
@@ -146,82 +143,52 @@ export default function UploadMatchForm({
       }
       const { params } = parsed
 
+      // openapi-fetch only sends multipart when the body is a FormData
+      // instance; a plain object would be JSON-stringified (a File becomes
+      // "{}"), so the video would never reach the backend.
+      const payload = new FormData()
+      payload.append('name', params.matchName)
+      payload.append('played_at', params.playedAt)
+      payload.append('team_color', params.teamColor)
+      payload.append('map_id', String(params.mapId))
+      payload.append('opponent_team_id', String(params.opponentTeamId))
+      payload.append('video', params.videoFile, params.videoFile.name)
+
       try {
-        const plan = await planVideoUpload(params.videoFile)
-
-        const textResponse = await createMatchText({
-          params: { path: { team: params.uploaderId } },
-          body: {
-            name: params.matchName,
-            played_at: params.playedAt,
-            team_color: params.teamColor,
-            map_id: params.mapId,
-            opponent_team_id: params.opponentTeamId,
-            total_chunks: plan.totalChunks,
-            total_bytes: plan.totalBytes,
-            content_hash: plan.contentHash,
-          },
-        })
-        const matchId = textResponse.data.match_id
-
-        // Text data is in: close the drawer now so only the progress toast
-        // represents the video chunk uploads.
-        onSuccess?.()
-
-        setIsUploadingVideo(true)
-        // Chunk progress is a single loading toast driven by toast.promise;
-        // per-chunk counts are tracked locally for the failure message.
-        let uploadedChunks = 0
-        try {
-          await toast.promise(
-            uploadVideoInChunks(matchId, params.videoFile, {
-              onProgress: (progress) => {
-                uploadedChunks = progress.done
-              },
-            }),
-            {
-              loading: {
-                title: 'Uploading video…',
-                timeout: 0,
-              },
-              success: {
-                type: 'success',
-                title: 'Match uploaded',
-                description: 'Processing started.',
-                timeout: 5000,
-              },
-              error: (chunkError: unknown) => ({
-                type: 'error',
-                title: 'Video upload failed',
-                description: describeChunkFailure(
-                  uploadedChunks,
-                  plan.totalChunks,
-                  matchId,
-                  chunkError,
-                ),
-                timeout: 5000,
-              }),
+        // Text fields + video go in one request, so the drawer stays open
+        // with the button spinner until the upload resolves.
+        await toast.promise(
+          createMatchDirect({
+            params: { path: { team: params.uploaderId } },
+            body: payload as unknown as StoreDirectMatchBody,
+          }),
+          {
+            loading: {
+              title: 'Uploading match…',
+              timeout: 0,
             },
-          )
-        } catch (chunkError) {
-          // Chunk failures carry the raw server payload; surface field
-          // errors for the reopened form, the toast already shows the summary.
-          const fieldErrors = getFieldErrors(chunkError)
-          setServerErrors(fieldErrors)
-          setFormError(
-            describeChunkFailure(
-              uploadedChunks,
-              plan.totalChunks,
-              matchId,
-              chunkError,
-            ),
-          )
-          return
-        }
+            success: {
+              type: 'success',
+              title: 'Match uploaded',
+              description: 'Processing started.',
+              timeout: 5000,
+            },
+            error: (uploadError: unknown) => ({
+              type: 'error',
+              title: 'Upload failed',
+              description: getErrorMessage(
+                uploadError,
+                'Could not upload the match. Please try again.',
+              ),
+              timeout: 5000,
+            }),
+          },
+        )
 
         form.reset()
         setServerErrors({})
         setFormError(null)
+        onSuccess?.()
       } catch (error) {
         const fieldErrors = getFieldErrors(error)
         setServerErrors(fieldErrors)
@@ -233,8 +200,6 @@ export default function UploadMatchForm({
             ),
           )
         }
-      } finally {
-        setIsUploadingVideo(false)
       }
     },
   })
@@ -434,8 +399,10 @@ export default function UploadMatchForm({
         <form.Field
           name="videoFile"
           children={(field) => {
+            const fieldServerErrors = toFieldErrors(serverErrors, 'video')
             const isInvalid =
-              field.state.meta.isTouched && !field.state.meta.isValid
+              (field.state.meta.isTouched && !field.state.meta.isValid) ||
+              fieldServerErrors.length > 0
             return (
               <Field data-invalid={isInvalid}>
                 <FieldLabel className="text-sm text-muted" htmlFor={field.name}>
@@ -443,7 +410,10 @@ export default function UploadMatchForm({
                 </FieldLabel>
                 <VideoDropzone
                   value={field.state.value}
-                  onChange={(file) => field.handleChange(file)}
+                  onChange={(file) => {
+                    field.handleChange(file)
+                    clearServerError('video')
+                  }}
                   onBlur={field.handleBlur}
                   isInvalid={isInvalid}
                   inputId={field.name}
@@ -452,7 +422,7 @@ export default function UploadMatchForm({
                 {isInvalid && (
                   <FieldError
                     id={`${field.name}-error`}
-                    errors={field.state.meta.errors}
+                    errors={[...field.state.meta.errors, ...fieldServerErrors]}
                   />
                 )}
               </Field>
@@ -471,11 +441,7 @@ export default function UploadMatchForm({
             size="lg"
             disabled={isSubmitting}
           >
-            {isSendingInfo
-              ? 'Sending match info...'
-              : isUploadingVideo
-                ? 'Uploading video...'
-                : 'Start Analyzing'}
+            {isSubmitting ? 'Uploading match...' : 'Start Analyzing'}
             {isSubmitting && <Spinner />}
           </Button>
         </Field>

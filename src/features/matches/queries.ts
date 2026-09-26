@@ -7,17 +7,27 @@ export type MatchListFilters = NonNullable<
   operations['match.index']['parameters']['query']
 >
 
+export type TeamMatchListFilters = NonNullable<
+  operations['match.teamIndex']['parameters']['query']
+>
+
 export const mapQueries = {
   list: () => $api.queryOptions('get', '/maps'),
 }
 
 export const matchQueries = {
   list: (filters?: MatchListFilters) =>
-    $api.queryOptions('get', '/matches', { params: { query: filters } }),  detail: (id: number) =>
+    $api.queryOptions('get', '/matches', { params: { query: filters } }),
+  detail: (id: number) =>
     $api.queryOptions('get', '/matches/{match}', {
       params: { path: { match: id } },
     }),
+  teamList: (teamId: number, filters: TeamMatchListFilters) =>
+    $api.queryOptions('get', '/teams/{team}/matches', {
+      params: { path: { team: teamId }, query: filters },
+    }),
   lists: () => matchQueries.list().queryKey.slice(0, 2),
+  teamLists: () => matchQueries.teamList(0, { map_id: 0 }).queryKey.slice(0, 2),
   infiniteList: (filters?: Omit<MatchListFilters, 'pagination'>) => {
     // Shared by the queryKey and the queryFn so the backend actually returns
     // cursor pagination. Without `pagination: 'cursor'` it defaults to page

@@ -8,6 +8,7 @@ export function useCreateMatchText() {
   return $api.useMutation('post', '/teams/{team}/match-text', {
     onSuccess() {
       void queryClient.invalidateQueries({ queryKey: matchQueries.lists() })
+      void queryClient.invalidateQueries({ queryKey: matchQueries.teamLists() })
     },
   })
 }

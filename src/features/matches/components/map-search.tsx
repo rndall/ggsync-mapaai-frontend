@@ -11,16 +11,10 @@ import {
   ComboboxList,
 } from '@/components/ui/combobox'
 import { mapQueries } from '@/features/matches/queries'
+import { capitalizeWords } from '@/features/matches/utils'
 import type { components } from '@/types/api'
 
 export type MapOption = components['schemas']['MapResource']
-
-function capitalizeWords(value: string): string {
-  return value.replace(/\S+/g, (word) => {
-    const [first, ...rest] = Array.from(word)
-    return first ? first.toUpperCase() + rest.join('') : word
-  })
-}
 
 type MapSelectProps = {
   value: string

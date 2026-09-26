@@ -1,5 +1,6 @@
-import { getRouteApi, Link } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
 import { cva } from 'class-variance-authority'
+import { Ellipsis, Eye } from 'lucide-react'
 
 import {
   Item,
@@ -7,41 +8,49 @@ import {
   ItemDescription,
   ItemTitle,
 } from '@/components/ui/item'
+import type {
+  MatchHistoryVariant,
+  MatchResource,
+} from '@/features/matches/utils'
+import {
+  capitalizeWords,
+  formatHistoryDate,
+  historyMatchup,
+  historyStatusLabel,
+  toHistoryVariant,
+} from '@/features/matches/utils'
 
 const matchItemVariants = cva('rounded-none border-l-4', {
   variants: {
     variant: {
+      analyzing: 'border-l-[#B5C6DD]',
       victory: 'border-l-primary',
-      defeat: 'border-l-[#B5C6DD]',
-    },
+      defeat: 'border-l-destructive',
+    } satisfies Record<MatchHistoryVariant, string>,
   },
 })
 
-const matchItemDescriptionVariants = cva('font-heading', {
+const matchItemLabelVariants = cva('font-heading uppercase', {
   variants: {
     variant: {
+      analyzing: 'text-[#B5C6DD]',
       victory: 'text-primary',
-      defeat: 'text-[#B5C6DD]',
-    },
+      defeat: 'text-destructive',
+    } satisfies Record<MatchHistoryVariant, string>,
   },
 })
 
 interface MatchItemProps {
-  variant: 'victory' | 'defeat'
-  matchId: string
+  match: MatchResource
+  teamId: string
 }
 
-const teamRouteApi = getRouteApi('/_authed/teams/$teamId')
+export default function MatchItem({ match, teamId }: MatchItemProps) {
+  const variant = toHistoryVariant(match.status)
+  const isReady = match.status === 'ready'
 
-export default function MatchItem({ variant, matchId }: MatchItemProps) {
-  const { teamId } = teamRouteApi.useParams()
-
-  return (
-    <Link
-      to="/matches/$matchId/$teamId"
-      params={{ matchId, teamId }}
-      className="block"
-    >
+  const row = (
+    <div className="block">
       <Item
         className={matchItemVariants({
           variant,
@@ -49,33 +58,47 @@ export default function MatchItem({ variant, matchId }: MatchItemProps) {
             'justify-between bg-[#1C304C29] px-6 py-4 transition-colors *:flex-1! hover:bg-[#1C304C55]',
         })}
       >
-        <ItemContent>
+        <ItemContent className="gap-0">
           <ItemDescription
-            className={matchItemDescriptionVariants({
+            className={matchItemLabelVariants({
               variant,
               className: 'text-base',
             })}
           >
-            {variant === 'victory' ? 'Victory' : 'Defeat'}
+            {historyStatusLabel(match.status)}
+          </ItemDescription>
+          <ItemDescription className="text-sm text-muted">
+            {formatHistoryDate(match.played_at, match.created_at)}
           </ItemDescription>
         </ItemContent>
         <ItemContent className="gap-0">
-          <ItemTitle className="text-base">Team Ryza vs T1</ItemTitle>
+          <ItemTitle className="text-base">{historyMatchup(match)}</ItemTitle>
           <ItemDescription className="text-sm text-muted">
-            VCT Kineme
+            {match.name}
           </ItemDescription>
         </ItemContent>
         <ItemContent>
           <ItemDescription className="text-center text-base font-bold">
-            Map 01
+            {match.map?.name ? capitalizeWords(match.map.name) : '—'}
           </ItemDescription>
         </ItemContent>
-        <ItemContent>
-          <ItemDescription className="text-end text-sm text-muted">
-            13/12/2023
-          </ItemDescription>
+        <ItemContent className="items-end justify-center">
+          {isReady ? (
+            <Link
+              to="/matches/$matchId/$teamId"
+              params={{ matchId: String(match.id), teamId }}
+              aria-label={`View ${match.name} analysis`}
+              className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground transition-colors hover:bg-primary/80"
+            >
+              <Eye className="size-4" aria-hidden />
+            </Link>
+          ) : (
+            <Ellipsis className="size-5 text-muted" aria-hidden />
+          )}
         </ItemContent>
       </Item>
-    </Link>
+    </div>
   )
+
+  return row
 }

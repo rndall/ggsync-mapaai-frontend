@@ -4,6 +4,8 @@ import type { components } from '@/types/api'
 
 type MatchResource = components['schemas']['MatchResource']
 
+export type { MatchResource }
+
 // Bundled map backgrounds, keyed by normalized map name: the asset file
 // stems go through the same normalization the API map names do.
 const mapBackgrounds = import.meta.glob('@/assets/images/map-bg/*.webp', {
@@ -110,6 +112,70 @@ export function formatCardDate(timestamp: string | null): string {
 export function statusBadgeLabel(status: string): string | null {
   if (status === 'ready') return null
   return statusBadgeLabels[status] ?? status
+}
+
+// Uppercase the first letter of every whitespace-separated word.
+export function capitalizeWords(value: string): string {
+  return value.replace(/\S+/g, (word) => {
+    const [first, ...rest] = Array.from(word)
+    return first ? first.toUpperCase() + rest.join('') : word
+  })
+}
+
+// Row styling for team match history. The API exposes no win/loss outcome
+// yet, so ready matches temporarily reuse the victory treatment and every
+// other status renders its own label instead of win text.
+export type MatchHistoryVariant = 'analyzing' | 'victory' | 'defeat'
+
+export function toHistoryVariant(
+  status: MatchResource['status'],
+): MatchHistoryVariant {
+  if (status === 'failed') return 'defeat'
+  if (status === 'ready') return 'victory'
+  return 'analyzing'
+}
+
+// Status copy for history rows: in-progress work collapses to "Analyzing".
+export function historyStatusLabel(status: MatchResource['status']): string {
+  switch (status) {
+    case 'upload_pending':
+    case 'processing':
+      return 'Analyzing'
+    case 'failed':
+      return 'Failed'
+    case 'ready':
+      return 'Ready'
+    default:
+      return status
+  }
+}
+
+// "Team A vs Team B" in blue-left/red-right side order, like match cards.
+export function historyMatchup(match: MatchResource): string {
+  return [...match.participants]
+    .sort((a, b) => sideRank(a.color) - sideRank(b.color))
+    .map((participant) => participant.team_name)
+    .join(' vs ')
+}
+
+// Played date in MM-DD-YYYY form. Date-only values parse as a local date so
+// the day never shifts across timezones; full timestamps keep their time.
+export function formatHistoryDate(
+  playedAt: string | null,
+  createdAt: string | null,
+): string {
+  const raw = playedAt ?? createdAt
+  if (!raw) return ''
+  const date =
+    raw.length <= 10
+      ? new Date(
+          Number(raw.slice(0, 4)),
+          Number(raw.slice(5, 7)) - 1,
+          Number(raw.slice(8, 10)),
+        )
+      : new Date(raw)
+  if (Number.isNaN(date.getTime())) return ''
+  return format(date, 'MM-dd-yyyy')
 }
 
 // Side order: blue left (0), red right (2), anything unrecognized or missing

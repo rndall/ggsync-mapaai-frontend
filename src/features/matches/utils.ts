@@ -153,7 +153,7 @@ export function historyStatusLabel(status: MatchResource['status']): string {
 // "Team A vs Team B" in blue-left/red-right side order, like match cards.
 export function historyMatchup(match: MatchResource): string {
   return [...match.participants]
-    .sort((a, b) => sideRank(a.color) - sideRank(b.color))
+    .sort(compareParticipantsBySide)
     .map((participant) => participant.team_name)
     .join(' vs ')
 }
@@ -188,6 +188,16 @@ function sideRank(color: string | undefined): number {
   return 1
 }
 
+// Shared comparator for the domain side rule above: blue side first, red
+// side second, unrecognized sides in between with array-order fallback.
+// Sort a copy, never the API array in place — it is shared state.
+export function compareParticipantsBySide(
+  a: { color: string },
+  b: { color: string },
+): number {
+  return sideRank(a.color) - sideRank(b.color)
+}
+
 export function toMatchCard(match: MatchResource): MatchCard {
   return {
     id: match.id,
@@ -200,7 +210,7 @@ export function toMatchCard(match: MatchResource): MatchCard {
     // Sort a copy: the API array is shared state, and the blue side must
     // land on the left with the red side on the right.
     participants: [...match.participants]
-      .sort((a, b) => sideRank(a.color) - sideRank(b.color))
+      .sort(compareParticipantsBySide)
       .map((participant) => ({
         // Route params are strings, so the numeric participant id is coerced.
         teamId: String(participant.team_id),

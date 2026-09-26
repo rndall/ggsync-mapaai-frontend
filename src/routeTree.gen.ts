@@ -18,6 +18,7 @@ import { Route as AuthedMatchesIndexRouteImport } from './routes/_authed/matches
 import { Route as AuthedMatchesMatchIdRouteImport } from './routes/_authed/matches/$matchId'
 import { Route as AuthedTeamsIndexRouteImport } from './routes/_authed/teams/index'
 import { Route as AuthedTeamsTeamIdRouteImport } from './routes/_authed/teams/$teamId'
+import { Route as AuthedMatchesMatchIdTeamIdRouteImport } from './routes/_authed/matches/$matchId.$teamId'
 
 const AuthRouteRoute = AuthRouteRouteImport.update({
   id: '/_auth',
@@ -62,24 +63,32 @@ const AuthedTeamsTeamIdRoute = AuthedTeamsTeamIdRouteImport.update({
   path: '/teams/$teamId',
   getParentRoute: () => AuthedRouteRoute,
 } as any)
+const AuthedMatchesMatchIdTeamIdRoute =
+  AuthedMatchesMatchIdTeamIdRouteImport.update({
+    id: '/$teamId',
+    path: '/$teamId',
+    getParentRoute: () => AuthedMatchesMatchIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthedIndexRoute
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
-  '/matches/$matchId': typeof AuthedMatchesMatchIdRoute
+  '/matches/$matchId': typeof AuthedMatchesMatchIdRouteWithChildren
   '/teams/$teamId': typeof AuthedTeamsTeamIdRoute
   '/matches/': typeof AuthedMatchesIndexRoute
   '/teams/': typeof AuthedTeamsIndexRoute
+  '/matches/$matchId/$teamId': typeof AuthedMatchesMatchIdTeamIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AuthedIndexRoute
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
-  '/matches/$matchId': typeof AuthedMatchesMatchIdRoute
+  '/matches/$matchId': typeof AuthedMatchesMatchIdRouteWithChildren
   '/teams/$teamId': typeof AuthedTeamsTeamIdRoute
   '/matches': typeof AuthedMatchesIndexRoute
   '/teams': typeof AuthedTeamsIndexRoute
+  '/matches/$matchId/$teamId': typeof AuthedMatchesMatchIdTeamIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -88,10 +97,11 @@ export interface FileRoutesById {
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/register': typeof AuthRegisterRoute
   '/_authed/': typeof AuthedIndexRoute
-  '/_authed/matches/$matchId': typeof AuthedMatchesMatchIdRoute
+  '/_authed/matches/$matchId': typeof AuthedMatchesMatchIdRouteWithChildren
   '/_authed/teams/$teamId': typeof AuthedTeamsTeamIdRoute
   '/_authed/matches/': typeof AuthedMatchesIndexRoute
   '/_authed/teams/': typeof AuthedTeamsIndexRoute
+  '/_authed/matches/$matchId/$teamId': typeof AuthedMatchesMatchIdTeamIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -103,6 +113,7 @@ export interface FileRouteTypes {
     | '/teams/$teamId'
     | '/matches/'
     | '/teams/'
+    | '/matches/$matchId/$teamId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -112,6 +123,7 @@ export interface FileRouteTypes {
     | '/teams/$teamId'
     | '/matches'
     | '/teams'
+    | '/matches/$matchId/$teamId'
   id:
     | '__root__'
     | '/_auth'
@@ -123,6 +135,7 @@ export interface FileRouteTypes {
     | '/_authed/teams/$teamId'
     | '/_authed/matches/'
     | '/_authed/teams/'
+    | '/_authed/matches/$matchId/$teamId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -195,6 +208,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedTeamsTeamIdRouteImport
       parentRoute: typeof AuthedRouteRoute
     }
+    '/_authed/matches/$matchId/$teamId': {
+      id: '/_authed/matches/$matchId/$teamId'
+      path: '/$teamId'
+      fullPath: '/matches/$matchId/$teamId'
+      preLoaderRoute: typeof AuthedMatchesMatchIdTeamIdRouteImport
+      parentRoute: typeof AuthedMatchesMatchIdRoute
+    }
   }
 }
 
@@ -212,9 +232,20 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
   AuthRouteRouteChildren,
 )
 
+interface AuthedMatchesMatchIdRouteChildren {
+  AuthedMatchesMatchIdTeamIdRoute: typeof AuthedMatchesMatchIdTeamIdRoute
+}
+
+const AuthedMatchesMatchIdRouteChildren: AuthedMatchesMatchIdRouteChildren = {
+  AuthedMatchesMatchIdTeamIdRoute: AuthedMatchesMatchIdTeamIdRoute,
+}
+
+const AuthedMatchesMatchIdRouteWithChildren =
+  AuthedMatchesMatchIdRoute._addFileChildren(AuthedMatchesMatchIdRouteChildren)
+
 interface AuthedRouteRouteChildren {
   AuthedIndexRoute: typeof AuthedIndexRoute
-  AuthedMatchesMatchIdRoute: typeof AuthedMatchesMatchIdRoute
+  AuthedMatchesMatchIdRoute: typeof AuthedMatchesMatchIdRouteWithChildren
   AuthedTeamsTeamIdRoute: typeof AuthedTeamsTeamIdRoute
   AuthedMatchesIndexRoute: typeof AuthedMatchesIndexRoute
   AuthedTeamsIndexRoute: typeof AuthedTeamsIndexRoute
@@ -222,7 +253,7 @@ interface AuthedRouteRouteChildren {
 
 const AuthedRouteRouteChildren: AuthedRouteRouteChildren = {
   AuthedIndexRoute: AuthedIndexRoute,
-  AuthedMatchesMatchIdRoute: AuthedMatchesMatchIdRoute,
+  AuthedMatchesMatchIdRoute: AuthedMatchesMatchIdRouteWithChildren,
   AuthedTeamsTeamIdRoute: AuthedTeamsTeamIdRoute,
   AuthedMatchesIndexRoute: AuthedMatchesIndexRoute,
   AuthedTeamsIndexRoute: AuthedTeamsIndexRoute,

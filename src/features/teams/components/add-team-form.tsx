@@ -15,6 +15,11 @@ import { Spinner } from '@/components/ui/spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { useCreateTeam } from '@/features/teams/hooks/use-create-team'
 import type { operations } from '@/types/api'
+import {
+  getErrorMessage,
+  getFieldErrors,
+  toFieldErrors,
+} from '@/utils/server-errors'
 
 type StoreTeamBody =
   operations['teams.store']['requestBody']['content']['multipart/form-data']
@@ -41,33 +46,6 @@ const formSchema = z.object({
     })
     .nullable(),
 })
-
-type ServerErrorPayload = {
-  message?: unknown
-  errors?: unknown
-}
-
-function getFieldErrors(error: unknown): Record<string, string[]> {
-  if (typeof error !== 'object' || error === null) return {}
-  const { errors } = error as ServerErrorPayload
-  if (typeof errors !== 'object' || errors === null) return {}
-  return errors as Record<string, string[]>
-}
-
-function getErrorMessage(error: unknown): string {
-  if (typeof error === 'object' && error !== null) {
-    const { message } = error as ServerErrorPayload
-    if (typeof message === 'string' && message.length > 0) return message
-  }
-  return 'Could not create the team. Please try again.'
-}
-
-function toFieldErrors(
-  serverErrors: Record<string, string[]>,
-  key: string,
-): Array<{ message: string }> {
-  return (serverErrors[key] ?? []).map((message) => ({ message }))
-}
 
 type AddTeamFormProps = {
   onSuccess?: () => void
@@ -124,7 +102,12 @@ export default function AddTeamForm({ onSuccess }: AddTeamFormProps) {
             const fieldErrors = getFieldErrors(error)
             setServerErrors(fieldErrors)
             if (Object.keys(fieldErrors).length === 0) {
-              setFormError(getErrorMessage(error))
+              setFormError(
+                getErrorMessage(
+                  error,
+                  'Could not create the team. Please try again.',
+                ),
+              )
             }
           },
         },

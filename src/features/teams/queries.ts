@@ -14,6 +14,10 @@ export const teamQueries = {
     $api.queryOptions('get', '/teams/{team}', {
       params: { path: { team: id } },
     }),
+  options: (team: string) =>
+    $api.queryOptions('get', '/teams/{team}/options', {
+      params: { path: { team } },
+    }),
   lists: () => teamQueries.list().queryKey.slice(0, 2),
   infiniteList: (filters?: Omit<TeamListFilters, 'pagination'>) => {
     // Shared by the queryKey and the queryFn so the backend actually returns

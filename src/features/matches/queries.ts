@@ -7,10 +7,13 @@ export type MatchListFilters = NonNullable<
   operations['match.index']['parameters']['query']
 >
 
+export const mapQueries = {
+  list: () => $api.queryOptions('get', '/maps'),
+}
+
 export const matchQueries = {
   list: (filters?: MatchListFilters) =>
-    $api.queryOptions('get', '/matches', { params: { query: filters } }),
-  detail: (id: number) =>
+    $api.queryOptions('get', '/matches', { params: { query: filters } }),  detail: (id: number) =>
     $api.queryOptions('get', '/matches/{match}', {
       params: { path: { match: id } },
     }),

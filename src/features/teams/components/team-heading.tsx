@@ -12,8 +12,8 @@ export function TeamHeading() {
   const { data } = useSuspenseQuery(context.teamQueryOptions)
 
   return (
-    <div className="flex gap-4">
-      <Avatar>
+    <div className="flex items-center gap-4">
+      <Avatar size="xl">
         <AvatarImage src={data.data.logo_url || undefined} />
         <AvatarFallback>{getTeamNameInitials(data.data.name)}</AvatarFallback>
       </Avatar>
@@ -27,8 +27,8 @@ export function TeamHeading() {
 
 export function TeamHeadingSkeleton() {
   return (
-    <div aria-hidden className="flex gap-4">
-      <Skeleton className="size-8 rounded-full" />
+    <div aria-hidden className="flex items-center gap-4">
+      <Skeleton className="size-14 rounded-full" />
       <div className="flex flex-1 flex-col gap-2">
         <Skeleton className="h-9 w-48" />
         <Skeleton className="h-4 w-full max-w-md" />

@@ -15,6 +15,8 @@ import {
   ItemTitle,
 } from '@/components/ui/item'
 
+import { getTeamNameInitials } from '../utils'
+
 const teamItemVariants = cva('gap-6 rounded-sm p-6', {
   variants: {
     variant: {
@@ -39,12 +41,7 @@ export default function TeamListItem({
   description: string | null
   logoUrl: string | null
 }) {
-  const initials = name
-    .split(/\s+/)
-    .map((word) => word[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
+  const initials = getTeamNameInitials(name)
 
   return (
     <Item

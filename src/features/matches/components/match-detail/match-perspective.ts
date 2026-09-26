@@ -1,8 +1,5 @@
 import type { MatchResource } from '@/features/matches/utils'
-import {
-  capitalizeWords,
-  compareParticipantsBySide,
-} from '@/features/matches/utils'
+import { compareParticipantsBySide } from '@/features/matches/utils'
 
 export type MatchParticipant = MatchResource['participants'][number]
 
@@ -32,43 +29,18 @@ export function isMatchParticipant(
   )
 }
 
-// Canonical auto-pick: the incoming team context when present and a valid
-// participant, otherwise the first participant in blue-first side order.
-// Null when the match has no participants to pick from.
+// Canonical auto-pick for an address that does not name a valid team: the
+// first participant in blue-first side order. Null when the match has no
+// participants to pick from.
+//
+// There is deliberately no "incoming team" preference here. Both entry points
+// link straight to the canonical team-scoped address, so a team context
+// arrives in the URL rather than in location state — which also survives
+// refresh and sharing. The bare address is only reached by typing, and it has
+// no context to prefer.
 export function pickPerspectiveTeamId(
   participants: Array<MatchParticipant>,
-  preferredTeamId?: string | null,
 ): string | null {
-  const ordered = orderParticipantsBySide(participants)
-  if (
-    preferredTeamId &&
-    ordered.some(
-      (participant) => participantTeamId(participant) === preferredTeamId,
-    )
-  ) {
-    return preferredTeamId
-  }
-  const first = ordered[0]
+  const first = orderParticipantsBySide(participants)[0]
   return first ? participantTeamId(first) : null
-}
-
-// Navigation origin travels in lightweight location state used solely for
-// bare/invalid-address auto-pick and is never rendered.
-export function readOriginTeamId(state: unknown): string | undefined {
-  if (typeof state !== 'object' || state === null) return undefined
-  const candidate = (state as { fromTeamId?: unknown }).fromTeamId
-  if (typeof candidate === 'string' && candidate.length > 0) return candidate
-  if (typeof candidate === 'number' && Number.isFinite(candidate)) {
-    return String(candidate)
-  }
-  return undefined
-}
-
-// Humanized side copy for the perspective panel.
-export function sideLabel(color: string | undefined): string {
-  const normalized = color?.trim().toLowerCase()
-  if (normalized === 'blue') return 'Blue'
-  if (normalized === 'red') return 'Red'
-  if (!color || color.trim().length === 0) return '—'
-  return capitalizeWords(color.trim())
 }

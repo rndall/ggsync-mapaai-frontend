@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import type { ReactNode } from 'react'
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -9,11 +10,9 @@ import { MinimapPlaceholder } from './minimap-placeholder'
 import { PerMapStatsBanner } from './per-map-banner'
 import { PerMapStatsFilters } from './per-map-stats-filters'
 import { PER_MAP_STATS_MOCK } from './per-map-stats-mock'
+import { PerMapStatsViewTabs } from './per-map-stats-view-tabs'
 import { PlayerStats } from './player-stats'
-import type {
-  PerMapStatsSide,
-  PerMapStatsView,
-} from './use-per-map-stats-params'
+import type { PerMapStatsSide } from './use-per-map-stats-params'
 import { usePerMapStatsParams } from './use-per-map-stats-params'
 import { UtilityStats } from './utility-stats'
 
@@ -21,29 +20,47 @@ import { UtilityStats } from './utility-stats'
 // stays hardcoded until the stats API exists.
 const MAP_WIN_PCT = 100
 
-export default function PerMapStats() {
-  const {
-    view,
-    setView,
-    side,
-    setSide,
-    heat,
-    setHeat,
-    team,
-    setTeam,
-    map,
-    setMap,
-  } = usePerMapStatsParams()
+type PerMapStatsProps = {
+  // Header furniture override. A supplied header replaces the map banner AND
+  // the panel's own Player/Utility switch, since both belong to the header
+  // and a host that brings its own brings its own switch. The match page
+  // passes the score header, which carries both.
+  header?: ReactNode
+  // Pins the read to one map, overriding the URL. A host that already knows
+  // the map has no picker left to set it with, so without this it would
+  // silently report the first map in the list instead of its own.
+  mapId?: string
+  // The Team and Map pickers only make sense where the read is not already
+  // scoped; a match fixes both on its own.
+  showFilters?: boolean
+}
 
-  const teamsQuery = useQuery(teamQueries.options())
+export default function PerMapStats({
+  header,
+  mapId,
+  showFilters = true,
+}: PerMapStatsProps) {
+  const { view, side, setSide, heat, setHeat, team, setTeam, map, setMap } =
+    usePerMapStatsParams()
+
+  // The opponent picker is the only consumer of the team list, so a host that
+  // hides the filters must neither fetch it nor block on it.
+  const teamsQuery = useQuery({
+    ...teamQueries.options(),
+    enabled: showFilters,
+  })
   const mapsQuery = useQuery(mapQueries.list())
 
   const teams = teamsQuery.data?.data ?? []
   const maps = mapsQuery.data?.data ?? []
   // No map chosen (or a stale id in the URL) falls back to the first
-  // available map.
-  const selectedMapId = maps.some((option) => String(option.id) === map)
-    ? map
+  // available map. A host-supplied mapId is authoritative and falls back the
+  // same way when the list does not carry it.
+  const requestedMapId = mapId ?? map
+  const selectedMapId = maps.some(
+    (option) => String(option.id) === requestedMapId,
+  )
+    ? requestedMapId
     : maps[0] !== undefined
       ? String(maps[0].id)
       : ''
@@ -53,11 +70,11 @@ export default function PerMapStats() {
   // endpoint exists; the side toggle only swaps which mock slice renders.
   const sideStats = PER_MAP_STATS_MOCK[side]
 
-  if (teamsQuery.isPending || mapsQuery.isPending) {
-    return <PerMapStatsSkeleton />
+  if (mapsQuery.isPending || (showFilters && teamsQuery.isPending)) {
+    return <PerMapStatsSkeleton showFilters={showFilters} />
   }
 
-  if (teamsQuery.isError || mapsQuery.isError) {
+  if (mapsQuery.isError || (showFilters && teamsQuery.isError)) {
     return (
       <section
         aria-label="Per Map Stats"
@@ -78,38 +95,38 @@ export default function PerMapStats() {
     >
       <div className="flex flex-wrap items-end justify-between gap-4">
         <h2 className="font-heading text-xl">Per Map Stats</h2>
-        <PerMapStatsFilters
-          teams={teams}
-          maps={maps}
-          team={team}
-          onTeamChange={(value) => void setTeam(value)}
-          mapId={selectedMapId}
-          onMapChange={(value) => void setMap(value)}
-        />
+        {/* The team page scopes the read by picking a slice. The match page
+            has no such choice: the match already fixes both teams and the
+            map, so a picker there would only offer a wrong answer. */}
+        {showFilters && (
+          <PerMapStatsFilters
+            teams={teams}
+            maps={maps}
+            team={team}
+            onTeamChange={(value) => void setTeam(value)}
+            mapId={selectedMapId}
+            onMapChange={(value) => void setMap(value)}
+          />
+        )}
       </div>
       {/* Banner and analysis panel share one card so the header stays
           attached to the tabs and stats below. */}
       <div className="overflow-hidden rounded-lg border bg-card">
-        <PerMapStatsBanner
-          mapName={selectedMap?.name ?? null}
-          winPct={MAP_WIN_PCT}
-          className="rounded-none border-0"
-        />
-        {/* View tabs straddle the banner's bottom edge, inset from the left
-            to match the panel padding. Half of the tab height overlaps the
-            banner's bottom padding zone, so no banner content is covered.
-            relative+z-10 keeps the tabs above the banner's positioned
-            background layers. */}
-        <Tabs
-          value={view}
-          onValueChange={(value) => void setView(value as PerMapStatsView)}
-          className="relative z-10 -mt-10 ml-4 sm:ml-6"
-        >
-          <TabsList aria-label="View" variant="line">
-            <TabsTrigger value="player">Player</TabsTrigger>
-            <TabsTrigger value="utility">Utility</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {header ?? (
+          <>
+            <PerMapStatsBanner
+              mapName={selectedMap?.name ?? null}
+              winPct={MAP_WIN_PCT}
+              className="rounded-none border-0"
+            />
+            {/* The tabs straddle the banner's bottom edge, inset from the left
+                to match the panel padding. Half of the tab height overlaps the
+                banner's bottom padding zone, so no banner content is covered,
+                and relative+z-10 keeps the tabs above the banner's positioned
+                background layers. */}
+            <PerMapStatsViewTabs className="relative z-10 -mt-10 ml-4 sm:ml-6" />
+          </>
+        )}
         <div className="flex flex-col gap-4 p-4 sm:p-6">
           <Tabs
             value={side}
@@ -138,7 +155,7 @@ export default function PerMapStats() {
   )
 }
 
-function PerMapStatsSkeleton() {
+function PerMapStatsSkeleton({ showFilters }: { showFilters: boolean }) {
   return (
     <section
       aria-label="Per Map Stats"
@@ -146,10 +163,12 @@ function PerMapStatsSkeleton() {
     >
       <div className="flex flex-wrap items-end justify-between gap-4">
         <Skeleton className="h-7 w-44" />
-        <div className="flex flex-wrap gap-3">
-          <Skeleton className="h-9 w-44" />
-          <Skeleton className="h-9 w-44" />
-        </div>
+        {showFilters && (
+          <div className="flex flex-wrap gap-3">
+            <Skeleton className="h-9 w-44" />
+            <Skeleton className="h-9 w-44" />
+          </div>
+        )}
       </div>
       <Skeleton className="min-h-48 rounded-lg" />
       <Skeleton className="h-9 w-36" />

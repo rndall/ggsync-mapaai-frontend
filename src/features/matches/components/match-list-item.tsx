@@ -1,7 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { Fragment } from 'react'
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import {
   Item,
@@ -16,6 +15,7 @@ import {
   mapBackground,
   statusBadgeLabel,
 } from '@/features/matches/utils'
+import { TeamAvatar } from '@/features/teams/components/team-avatar'
 
 export default function MatchListItem({
   id,
@@ -77,12 +77,10 @@ export default function MatchListItem({
                 </div>
               )}
               <div className="flex min-w-0 flex-1 flex-col items-center gap-2 px-2">
-                <Avatar size="xl">
-                  <AvatarImage src={participant.logo ?? undefined} />
-                  <AvatarFallback className="text-lg uppercase">
-                    {participant.name.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
+                <TeamAvatar
+                  name={participant.name}
+                  fallbackClassName="text-lg"
+                />
                 <p className="text-center uppercase">{participant.name}</p>
               </div>
             </Fragment>

@@ -1,14 +1,15 @@
-import { useQuery } from '@tanstack/react-query'
-import { getRouteApi, Navigate, useLocation } from '@tanstack/react-router'
+import { getRouteApi, Navigate } from '@tanstack/react-router'
 
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { MatchScoreHeader } from '@/features/matches/components/match-score-header'
 import type { MatchResource } from '@/features/matches/utils'
 import {
   capitalizeWords,
   formatCardDate,
   statusBadgeLabel,
 } from '@/features/matches/utils'
+import PerMapStats from '@/features/teams/components/per-map-stats/per-map-stats'
+import { PerMapStatsViewTabs } from '@/features/teams/components/per-map-stats/per-map-stats-view-tabs'
 
 import {
   MatchDetailEmpty,
@@ -20,11 +21,9 @@ import {
   orderParticipantsBySide,
   participantTeamId,
   pickPerspectiveTeamId,
-  readOriginTeamId,
-  sideLabel,
 } from './match-perspective'
+import { useMatchQuery } from './use-match-query'
 
-const matchRouteApi = getRouteApi('/_authed/matches/$matchId')
 const teamRouteApi = getRouteApi('/_authed/matches/$matchId/$teamId')
 
 // Canonical team-scoped match view. The match is fetched once per match and
@@ -32,17 +31,8 @@ const teamRouteApi = getRouteApi('/_authed/matches/$matchId/$teamId')
 // same widgets without a new fetch and a future backend perspective
 // parameter can drop in without a route change.
 export function MatchTeamView() {
-  const { matchId, teamId } = teamRouteApi.useParams()
-  const context = matchRouteApi.useRouteContext()
-  const locationState = useLocation({
-    select: (location) => location.state,
-  })
-  const matchIdNumber = Number(matchId)
-
-  const matchQuery = useQuery({
-    ...context.matchQueryOptions,
-    enabled: Number.isFinite(matchIdNumber),
-  })
+  const { teamId } = teamRouteApi.useParams()
+  const { matchIdNumber, matchQuery } = useMatchQuery()
 
   if (!Number.isFinite(matchIdNumber)) {
     return <MatchDetailError message="Match not found." />
@@ -58,24 +48,24 @@ export function MatchTeamView() {
   // Stale or typed team segments self-heal onto the auto-picked valid team
   // instead of 404ing.
   if (!isMatchParticipant(participants, teamId)) {
-    const targetTeamId = pickPerspectiveTeamId(
-      participants,
-      readOriginTeamId(locationState),
-    )
+    const targetTeamId = pickPerspectiveTeamId(participants)
     if (!targetTeamId) return <MatchDetailEmpty />
     return (
       <Navigate
         to="/matches/$matchId/$teamId"
-        params={{ matchId, teamId: targetTeamId }}
+        params={{
+          matchId: String(matchQuery.data.data.id),
+          teamId: targetTeamId,
+        }}
         replace
       />
     )
   }
 
-  return <MatchPerspective match={match} activeTeamId={teamId} />
+  return <MatchTeamViewContent match={match} activeTeamId={teamId} />
 }
 
-function MatchPerspective({
+function MatchTeamViewContent({
   match,
   activeTeamId,
 }: {
@@ -93,14 +83,22 @@ function MatchPerspective({
   if (!active) {
     return <MatchDetailError message="Team not found in this match." />
   }
-  const opponent =
-    ordered.find(
-      (participant) => participantTeamId(participant) !== activeTeamId,
-    ) ?? null
 
   const badgeLabel = statusBadgeLabel(match.status)
   const mapName = match.map?.name ? capitalizeWords(match.map.name) : '—'
   const playedOn = formatCardDate(match.played_at || match.created_at)
+
+  // The header's team names are the perspective switch. Replace, never push:
+  // Back from either perspective exits the match instead of ping-ponging
+  // between the two teams.
+  function handleTeamChange(nextTeamId: string) {
+    if (nextTeamId === activeTeamId) return
+    void navigate({
+      to: '/matches/$matchId/$teamId',
+      params: { matchId, teamId: nextTeamId },
+      replace: true,
+    })
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -111,59 +109,32 @@ function MatchPerspective({
             {[mapName, playedOn].filter(Boolean).join(' • ')}
           </p>
         </div>
-        {badgeLabel && <Badge variant="secondary">{badgeLabel}</Badge>}
+        {badgeLabel && (
+          <Badge variant="secondary" className="h-10 p-3 text-sm">
+            {badgeLabel}
+          </Badge>
+        )}
       </div>
 
-      <Tabs
-        value={activeTeamId}
-        onValueChange={(nextTeamId) => {
-          // Replace, never push: Back from either perspective exits the
-          // match instead of ping-ponging between the two teams.
-          if (nextTeamId !== activeTeamId) {
-            void navigate({
-              to: '/matches/$matchId/$teamId',
-              params: { matchId, teamId: nextTeamId },
-              replace: true,
-            })
-          }
-        }}
-      >
-        <TabsList aria-label="Team perspective">
-          {ordered.map((participant) => (
-            <TabsTrigger
-              key={participantTeamId(participant)}
-              value={participantTeamId(participant)}
-            >
-              {participant.team_name}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
-
-      <section
-        aria-label="Match perspective"
-        className="flex flex-col gap-4 rounded-lg border bg-card p-4 sm:p-6"
-      >
-        <div>
-          <p className="text-sm text-muted-foreground">Viewing as</p>
-          <p className="font-heading text-xl">
-            {active.team_name} ({sideLabel(active.color)} side)
-          </p>
-          {active.is_uploaded_from && (
-            <p className="text-sm text-muted-foreground">
-              Match footage uploaded from this team.
-            </p>
-          )}
-        </div>
-        {opponent && (
-          <div>
-            <p className="text-sm text-muted-foreground">Opponent</p>
-            <p className="font-heading text-xl">
-              {opponent.team_name} ({sideLabel(opponent.color)} side)
-            </p>
-          </div>
-        )}
-      </section>
+      {/* The score header stands in for Per Map Stats' map banner and its own
+          view switch: a match already frames its own two teams, and the
+          header's team names are the perspective switch. Header and panel
+          share one card, so the tabs stay attached to the stats. mapId pins
+          the read to the match's own map, since the page has no picker to
+          set it with. */}
+      <PerMapStats
+        header={
+          <MatchScoreHeader
+            match={match}
+            activeTeamId={activeTeamId}
+            onTeamChange={handleTeamChange}
+            tabs={<PerMapStatsViewTabs />}
+            className="rounded-none border-0"
+          />
+        }
+        mapId={match.map ? String(match.map.id) : undefined}
+        showFilters={false}
+      />
     </div>
   )
 }

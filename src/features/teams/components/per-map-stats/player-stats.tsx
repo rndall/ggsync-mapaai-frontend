@@ -13,7 +13,7 @@ export function PlayerStats({ stats }: PlayerStatsProps) {
     <div className="flex flex-col gap-4">
       <section
         aria-label="Rotation Odds"
-        className="flex flex-col gap-4 rounded-lg border bg-card p-4 sm:p-6"
+        className="flex flex-col gap-4 rounded-lg border bg-muted/20 p-4 sm:p-6"
       >
         <h3 className="font-heading text-lg">Rotation Odds</h3>
         <RotationRow
@@ -27,7 +27,7 @@ export function PlayerStats({ stats }: PlayerStatsProps) {
       </section>
       <section
         aria-label="Top site setups"
-        className="flex flex-col gap-2 rounded-lg border bg-card p-4 sm:p-6"
+        className="flex flex-col gap-2 rounded-lg border bg-muted/20 p-4 sm:p-6"
       >
         <h3 className="font-heading text-lg">Top Setups</h3>
         <ol className="flex flex-col">
@@ -50,17 +50,17 @@ function RotationRow({
   return (
     <div className="flex flex-col gap-2">
       <p className="text-sm text-muted-foreground">{label}</p>
+      <div className="flex items-baseline justify-between text-xs">
+        <span className="text-emerald-500">{split.stay}% same site</span>
+        <span className="text-destructive">{split.switch}% switch</span>
+      </div>
       <div
         role="img"
         aria-label={`${label}: stay ${split.stay}%, switch ${split.switch}%`}
-        className="flex h-3 overflow-hidden rounded-full"
+        className="flex h-1.5 overflow-hidden rounded-full"
       >
         <div className="bg-emerald-500" style={{ width: `${split.stay}%` }} />
         <div className="bg-destructive" style={{ width: `${split.switch}%` }} />
-      </div>
-      <div className="flex items-baseline justify-between text-xs font-semibold">
-        <span className="text-emerald-500">{split.stay}% stay</span>
-        <span className="text-destructive">{split.switch}% switch</span>
       </div>
     </div>
   )

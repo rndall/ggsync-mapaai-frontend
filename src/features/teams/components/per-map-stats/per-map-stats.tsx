@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { mapQueries } from '@/features/matches/queries'
 import { teamQueries } from '@/features/teams/queries'
 
@@ -9,7 +10,10 @@ import { PerMapStatsBanner } from './per-map-banner'
 import { PerMapStatsFilters } from './per-map-stats-filters'
 import { PER_MAP_STATS_MOCK } from './per-map-stats-mock'
 import { PlayerStats } from './player-stats'
-import { SegmentedControl } from './segmented-control'
+import type {
+  PerMapStatsSide,
+  PerMapStatsView,
+} from './use-per-map-stats-params'
 import { usePerMapStatsParams } from './use-per-map-stats-params'
 
 // MOCK (replace with the real per-map stats endpoint): the headline win rate
@@ -82,41 +86,52 @@ export default function PerMapStats() {
           onMapChange={(value) => void setMap(value)}
         />
       </div>
-      <PerMapStatsBanner
-        mapName={selectedMap?.name ?? null}
-        winPct={MAP_WIN_PCT}
-      />
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <SegmentedControl
-          label="View"
+      {/* Banner and analysis panel share one card so the header stays
+          attached to the tabs and stats below. */}
+      <div className="overflow-hidden rounded-lg border bg-card">
+        <PerMapStatsBanner
+          mapName={selectedMap?.name ?? null}
+          winPct={MAP_WIN_PCT}
+          className="rounded-none border-0"
+        />
+        {/* View tabs straddle the banner's bottom edge, inset from the left
+            to match the panel padding. Half of the tab height overlaps the
+            banner's bottom padding zone, so no banner content is covered.
+            relative+z-10 keeps the tabs above the banner's positioned
+            background layers. */}
+        <Tabs
           value={view}
-          onChange={(value) => void setView(value)}
-          options={[
-            { value: 'player', label: 'Player' },
-            { value: 'utility', label: 'Utility' },
-          ]}
-        />
-        <SegmentedControl
-          label="Side"
-          value={side}
-          onChange={(value) => void setSide(value)}
-          options={[
-            { value: 'attacking', label: 'Attacking' },
-            { value: 'defending', label: 'Defending' },
-          ]}
-        />
-      </div>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {view === 'player' ? (
-          <PlayerStats stats={sideStats} />
-        ) : (
-          <UtilityComingSoon />
-        )}
-        <MinimapPlaceholder
-          heat={heat}
-          onHeatChange={(value) => void setHeat(value)}
-          showHeatToggle={view === 'player'}
-        />
+          onValueChange={(value) => void setView(value as PerMapStatsView)}
+          className="relative z-10 -mt-[18px] ml-4 sm:ml-6"
+        >
+          <TabsList aria-label="View">
+            <TabsTrigger value="player">Player</TabsTrigger>
+            <TabsTrigger value="utility">Utility</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <div className="flex flex-col gap-4 p-4 sm:p-6">
+          <Tabs
+            value={side}
+            onValueChange={(value) => void setSide(value as PerMapStatsSide)}
+          >
+            <TabsList aria-label="Side" className="w-full">
+              <TabsTrigger value="attacking">Attacking</TabsTrigger>
+              <TabsTrigger value="defending">Defending</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            {view === 'player' ? (
+              <PlayerStats stats={sideStats} />
+            ) : (
+              <UtilityComingSoon />
+            )}
+            <MinimapPlaceholder
+              heat={heat}
+              onHeatChange={(value) => void setHeat(value)}
+              showHeatToggle={view === 'player'}
+            />
+          </div>
+        </div>
       </div>
     </section>
   )
@@ -128,7 +143,7 @@ function UtilityComingSoon() {
   return (
     <section
       aria-label="Utility stats"
-      className="flex flex-col gap-2 rounded-lg border bg-card p-4 sm:p-6"
+      className="flex flex-col gap-2 rounded-lg border bg-muted/20 p-4 sm:p-6"
     >
       <h3 className="font-heading text-lg">Utility</h3>
       <p className="text-sm text-muted-foreground">
@@ -152,10 +167,8 @@ function PerMapStatsSkeleton() {
         </div>
       </div>
       <Skeleton className="min-h-48 rounded-lg" />
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Skeleton className="h-9 w-44" />
-        <Skeleton className="h-9 w-44" />
-      </div>
+      <Skeleton className="h-9 w-36" />
+      <Skeleton className="h-9 w-full rounded-lg" />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Skeleton className="min-h-72 rounded-lg" />
         <Skeleton className="aspect-square w-full rounded-lg" />

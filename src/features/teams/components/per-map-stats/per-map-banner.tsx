@@ -1,18 +1,27 @@
+import { cn } from 'cn'
+
 import { mapBackground } from '@/features/matches/utils'
 
 type PerMapStatsBannerProps = {
   mapName: string | null
   winPct: number
+  className?: string
 }
 
-export function PerMapStatsBanner({ mapName, winPct }: PerMapStatsBannerProps) {
+export function PerMapStatsBanner({
+  mapName,
+  winPct,
+  className,
+}: PerMapStatsBannerProps) {
   const background = mapBackground(mapName)
   // API names are display-ready ("Firing Range"); the replace only guards
   // against snake_case values, with uppercase handled by CSS.
   const displayName = (mapName ?? 'Unknown map').replace(/_/g, ' ')
 
   return (
-    <div className="relative overflow-hidden rounded-lg border">
+    <div
+      className={cn('relative overflow-hidden rounded-lg border', className)}
+    >
       {/* Gradient base doubles as the fallback when the map has no bundled
           art; the image layer only renders when an asset exists. */}
       <div

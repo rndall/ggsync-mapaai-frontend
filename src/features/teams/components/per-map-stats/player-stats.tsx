@@ -51,8 +51,10 @@ function RotationRow({
     <div className="flex flex-col gap-2">
       <p className="text-sm text-muted-foreground">{label}</p>
       <div className="flex items-baseline justify-between text-xs">
-        <span className="text-emerald-500">{split.stay}% same site</span>
-        <span className="text-destructive">{split.switch}% switch</span>
+        <span className="text-sm text-emerald-500">
+          {split.stay}% same site
+        </span>
+        <span className="text-sm text-destructive">{split.switch}% switch</span>
       </div>
       <div
         role="img"
@@ -73,14 +75,14 @@ function SetupRow({ setup }: { setup: SiteSetup }) {
         {setup.a > 0 && <SetupBadge label={`${setup.a}A`} />}
         {setup.b > 0 && <SetupBadge label={`${setup.b}B`} />}
       </span>
-      <span className="ml-auto text-sm font-semibold">{setup.pct}%</span>
+      <span className="ml-auto text-base font-semibold">{setup.pct}%</span>
     </li>
   )
 }
 
 function SetupBadge({ label }: { label: string }) {
   return (
-    <span className="rounded border border-destructive/60 px-1.5 py-0.5 text-xs font-semibold text-destructive">
+    <span className="rounded border border-destructive/60 px-1.5 py-1 text-sm font-semibold text-destructive">
       {label}
     </span>
   )

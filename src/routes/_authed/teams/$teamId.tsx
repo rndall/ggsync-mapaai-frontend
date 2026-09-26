@@ -3,9 +3,12 @@ import { CircleArrowLeft } from 'lucide-react'
 import { Suspense } from 'react'
 
 import { buttonVariants } from '@/components/ui/button'
-// import MapStats from './-components/MapStats'
 import MatchHistory from '@/features/matches/components/match-history'
-import { TeamHeading, TeamHeadingSkeleton } from '@/features/teams/components/team-heading'
+import PerMapStats from '@/features/teams/components/per-map-stats/per-map-stats'
+import {
+  TeamHeading,
+  TeamHeadingSkeleton,
+} from '@/features/teams/components/team-heading'
 import { teamQueries } from '@/features/teams/queries'
 
 export const Route = createFileRoute('/_authed/teams/$teamId')({
@@ -38,7 +41,7 @@ function RouteComponent() {
         <Suspense fallback={<TeamHeadingSkeleton />}>
           <TeamHeading />
         </Suspense>
-        {/* <MapStats /> */}
+        <PerMapStats />
       </div>
       <MatchHistory />
     </div>

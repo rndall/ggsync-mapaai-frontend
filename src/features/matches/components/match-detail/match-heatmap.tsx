@@ -143,28 +143,35 @@ export function MatchHeatmap({
         }
         className="relative aspect-square w-full flex-1 overflow-hidden rounded-lg border bg-background/70"
       >
-        {baseImageUrl && (
-          <img
-            src={baseImageUrl}
-            alt=""
-            aria-hidden
-            draggable={false}
-            onLoad={handleBaseLoad(mapCrop)}
-            className="absolute inset-0 h-full w-full object-fill"
-          />
-        )}
-        <canvas
-          ref={canvasRef}
-          aria-hidden
-          className="absolute inset-0 h-full w-full"
-        />
-        {isEmpty && (
-          <p className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-muted-foreground">
-            {matchedRounds === 0
-              ? `${teamLabel} did not play ${sideLabel} in any tracked round.`
-              : `No ${heatLabel.toLowerCase()} points for ${teamLabel} on ${sideLabel} in this window.`}
-          </p>
-        )}
+        {/* Padded gutter around the map: the image and the canvas share the
+            inner coordinate space, so normalized points stay aligned with the
+            base under the stretch-to-fill mapping. */}
+        <div className="absolute inset-0 p-4">
+          <div ref={boxRef} className="relative h-full w-full">
+            {baseImageUrl && (
+              <img
+                src={baseImageUrl}
+                alt=""
+                aria-hidden
+                draggable={false}
+                onLoad={handleBaseLoad(mapCrop)}
+                className="absolute inset-0 h-full w-full object-fill"
+              />
+            )}
+            <canvas
+              ref={canvasRef}
+              aria-hidden
+              className="absolute inset-0 h-full w-full"
+            />
+            {isEmpty && (
+              <p className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-muted-foreground">
+                {matchedRounds === 0
+                  ? `${teamLabel} did not play ${sideLabel} in any tracked round.`
+                  : `No ${heatLabel.toLowerCase()} points for ${teamLabel} on ${sideLabel} in this window.`}
+              </p>
+            )}
+          </div>
+        </div>
       </div>
       {(failedRounds > 0 || lowConfidence) && (
         <div className="flex flex-wrap items-center gap-2 pt-2">

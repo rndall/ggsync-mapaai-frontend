@@ -140,6 +140,7 @@ function MatchTeamViewContent({
         }
         mapId={match.map ? String(match.map.id) : undefined}
         showFilters={false}
+        showTitle={false}
       />
     </div>
   )

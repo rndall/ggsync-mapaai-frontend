@@ -33,12 +33,16 @@ type PerMapStatsProps = {
   // The Team and Map pickers only make sense where the read is not already
   // scoped; a match fixes both on its own.
   showFilters?: boolean
+  // The heading only makes sense where the panel stands alone; a match
+  // already frames the context with its own title and score header.
+  showTitle?: boolean
 }
 
 export default function PerMapStats({
   header,
   mapId,
   showFilters = true,
+  showTitle = true,
 }: PerMapStatsProps) {
   const { view, side, setSide, heat, setHeat, team, setTeam, map, setMap } =
     usePerMapStatsParams()
@@ -71,7 +75,9 @@ export default function PerMapStats({
   const sideStats = PER_MAP_STATS_MOCK[side]
 
   if (mapsQuery.isPending || (showFilters && teamsQuery.isPending)) {
-    return <PerMapStatsSkeleton showFilters={showFilters} />
+    return (
+      <PerMapStatsSkeleton showFilters={showFilters} showTitle={showTitle} />
+    )
   }
 
   if (mapsQuery.isError || (showFilters && teamsQuery.isError)) {
@@ -80,7 +86,7 @@ export default function PerMapStats({
         aria-label="Per Map Stats"
         className="flex flex-col gap-4 rounded-lg border bg-card p-4 sm:p-6"
       >
-        <h2 className="font-heading text-xl">Per Map Stats</h2>
+        {showTitle && <h2 className="font-heading text-xl">Per Map Stats</h2>}
         <p role="alert" className="text-sm text-destructive">
           Failed to load Per Map Stats.
         </p>
@@ -93,22 +99,24 @@ export default function PerMapStats({
       aria-label="Per Map Stats"
       className="flex flex-col gap-4 rounded-lg"
     >
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <h2 className="font-heading text-xl">Per Map Stats</h2>
-        {/* The team page scopes the read by picking a slice. The match page
+      {(showTitle || showFilters) && (
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          {showTitle && <h2 className="font-heading text-xl">Per Map Stats</h2>}
+          {/* The team page scopes the read by picking a slice. The match page
             has no such choice: the match already fixes both teams and the
             map, so a picker there would only offer a wrong answer. */}
-        {showFilters && (
-          <PerMapStatsFilters
-            teams={teams}
-            maps={maps}
-            team={team}
-            onTeamChange={(value) => void setTeam(value)}
-            mapId={selectedMapId}
-            onMapChange={(value) => void setMap(value)}
-          />
-        )}
-      </div>
+          {showFilters && (
+            <PerMapStatsFilters
+              teams={teams}
+              maps={maps}
+              team={team}
+              onTeamChange={(value) => void setTeam(value)}
+              mapId={selectedMapId}
+              onMapChange={(value) => void setMap(value)}
+            />
+          )}
+        </div>
+      )}
       {/* Banner and analysis panel share one card so the header stays
           attached to the tabs and stats below. */}
       <div className="overflow-hidden rounded-lg border bg-card">
@@ -155,21 +163,29 @@ export default function PerMapStats({
   )
 }
 
-function PerMapStatsSkeleton({ showFilters }: { showFilters: boolean }) {
+function PerMapStatsSkeleton({
+  showFilters,
+  showTitle = true,
+}: {
+  showFilters: boolean
+  showTitle?: boolean
+}) {
   return (
     <section
       aria-label="Per Map Stats"
       className="flex flex-col gap-4 rounded-lg border bg-card p-4 sm:p-6"
     >
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <Skeleton className="h-7 w-44" />
-        {showFilters && (
-          <div className="flex flex-wrap gap-3">
-            <Skeleton className="h-9 w-44" />
-            <Skeleton className="h-9 w-44" />
-          </div>
-        )}
-      </div>
+      {(showTitle || showFilters) && (
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          {showTitle && <Skeleton className="h-7 w-44" />}
+          {showFilters && (
+            <div className="flex flex-wrap gap-3">
+              <Skeleton className="h-9 w-44" />
+              <Skeleton className="h-9 w-44" />
+            </div>
+          )}
+        </div>
+      )}
       <Skeleton className="min-h-48 rounded-lg" />
       <Skeleton className="h-9 w-36" />
       <Skeleton className="h-9 w-full rounded-lg" />

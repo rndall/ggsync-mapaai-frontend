@@ -31,6 +31,31 @@ export type NormalizedHeatPoint = {
   ny: number
 }
 
+// Translate a crop-normalized point into the aspect-preserved base image
+// rect, mirroring CSS `object-contain`: the base scales to the largest fit
+// inside the box and centers, and the point scales into that displayed rect.
+// Without a known base size (image still loading, or no base URL) it falls
+// back to the full box.
+export function containPoint(
+  nx: number,
+  ny: number,
+  boxWidth: number,
+  boxHeight: number,
+  baseWidth: number | null,
+  baseHeight: number | null,
+): { x: number; y: number } {
+  if (!baseWidth || !baseHeight || !boxWidth || !boxHeight) {
+    return { x: nx * boxWidth, y: ny * boxHeight }
+  }
+  const scale = Math.min(boxWidth / baseWidth, boxHeight / baseHeight)
+  const displayWidth = baseWidth * scale
+  const displayHeight = baseHeight * scale
+  return {
+    x: (boxWidth - displayWidth) / 2 + nx * displayWidth,
+    y: (boxHeight - displayHeight) / 2 + ny * displayHeight,
+  }
+}
+
 // Player-position tracks end in `player` (e.g. `blue_player`, `red_player`).
 export function isPlayerIconType(iconType: string): boolean {
   return iconType.trim().toLowerCase().endsWith('player')

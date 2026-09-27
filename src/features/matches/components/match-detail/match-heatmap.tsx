@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { NormalizedHeatPoint } from '@/features/matches/analysis-heat'
+import { containPoint } from '@/features/matches/analysis-heat'
 import type { MapCrop } from '@/features/matches/analysis-types'
 import type { PerMapStatsHeat } from '@/features/teams/components/per-map-stats/use-per-map-stats-params'
 
@@ -44,8 +45,21 @@ export function MatchHeatmap({
 }: MatchHeatmapProps) {
   const boxRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  // Natural size of the Maps API base once loaded. Until then (or with no
+  // base URL) points map to the full box; afterwards they map into the
+  // aspect-preserved image rect via `containPoint`.
+  const [baseSize, setBaseSize] = useState<{
+    width: number
+    height: number
+  } | null>(null)
   const isEmpty = points.length === 0
   const heatLabel = heat === 'type1' ? 'Player' : 'Event'
+
+  // A new base URL invalidates the old natural size until it loads, so heat
+  // never maps against a stale aspect in between.
+  useEffect(() => {
+    setBaseSize(null)
+  }, [baseImageUrl])
 
   useEffect(() => {
     const box = boxRef.current
@@ -78,8 +92,17 @@ export function MatchHeatmap({
       layerCtx.globalCompositeOperation = 'lighter'
       const radius = Math.max(16 * dpr, Math.min(width, height) * 0.085)
       for (const point of points) {
-        const cx = point.nx * width
-        const cy = point.ny * height
+        // Crop-normalized points translate into the aspect-preserved image
+        // rect (x over crop width, y over crop height, scaled into the
+        // displayed base), so the base keeps its ratio and heat lands on it.
+        const { x: cx, y: cy } = containPoint(
+          point.nx,
+          point.ny,
+          width,
+          height,
+          baseSize?.width ?? null,
+          baseSize?.height ?? null,
+        )
         const gradient = layerCtx.createRadialGradient(
           cx,
           cy,
@@ -116,7 +139,7 @@ export function MatchHeatmap({
     const observer = new ResizeObserver(render)
     observer.observe(box)
     return () => observer.disconnect()
-  }, [points])
+  }, [points, baseSize])
 
   return (
     <div className="relative flex h-full flex-col">
@@ -131,10 +154,10 @@ export function MatchHeatmap({
         </TabsList>
       </Tabs>
       {/* Same square box as the old placeholder: no layout shift when heat
-          arrives. The base fills by stretching (normalized x / crop width,
-          y / crop height map to percentages of this box). */}
+          arrives. The base keeps its aspect ratio (contain); normalized
+          points translate from the analysis crop size into the displayed
+          image rect, so heat lands on the undistorted base. */}
       <div
-        ref={boxRef}
         role="img"
         aria-label={
           isEmpty
@@ -144,18 +167,18 @@ export function MatchHeatmap({
         className="relative aspect-square w-full flex-1 overflow-hidden rounded-lg border bg-background/70"
       >
         {/* Padded gutter around the map: the image and the canvas share the
-            inner coordinate space, so normalized points stay aligned with the
-            base under the stretch-to-fill mapping. */}
+            inner coordinate space, so heat stays aligned with the base. */}
         <div className="absolute inset-0 p-4">
           <div ref={boxRef} className="relative h-full w-full">
             {baseImageUrl && (
               <img
+                key={baseImageUrl}
                 src={baseImageUrl}
                 alt=""
                 aria-hidden
                 draggable={false}
-                onLoad={handleBaseLoad(mapCrop)}
-                className="absolute inset-0 h-full w-full object-fill"
+                onLoad={handleBaseLoad(mapCrop, setBaseSize)}
+                className="absolute inset-0 h-full w-full object-contain"
               />
             )}
             <canvas
@@ -221,13 +244,24 @@ function heatRamp(t: number): [number, number, number] {
   return HEAT_STOPS[HEAT_STOPS.length - 1]?.color ?? [239, 68, 68]
 }
 
-// Dev-only guard for the stretch assumption: the observed Tunisia delta
-// (processing frame versus minimap base) is ~1.6% in height, so only a
-// future map past ~5% aspect delta warns.
-function handleBaseLoad(mapCrop: MapCrop) {
+// Translate a crop-normalized point (x over crop width, y over crop height)
+// into the aspect-preserved base image rect — see `containPoint` in
+// `./analysis-heat` for the mapping.
+
+// Base load handler: records the natural size so heat maps into the
+// aspect-preserved rect, and (dev only) warns when the analysis crop frame
+// drifts past ~5% aspect delta from the base — the observed Tunisia delta is
+// ~1.6% in height, absorbed by the translation with no visible distortion.
+function handleBaseLoad(
+  mapCrop: MapCrop,
+  onSize: (size: { width: number; height: number }) => void,
+) {
   return (event: React.SyntheticEvent<HTMLImageElement>) => {
-    if (!import.meta.env.DEV) return
     const img = event.currentTarget
+    if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+      onSize({ width: img.naturalWidth, height: img.naturalHeight })
+    }
+    if (!import.meta.env.DEV) return
     if (
       !img.naturalWidth ||
       !img.naturalHeight ||
@@ -241,7 +275,7 @@ function handleBaseLoad(mapCrop: MapCrop) {
     const delta = Math.abs(cropAspect - baseAspect) / baseAspect
     if (delta > 0.05) {
       console.warn(
-        `[heatmap] map crop aspect differs from the base image by ${(delta * 100).toFixed(1)}% — normalized stretch may distort positions.`,
+        `[heatmap] map crop aspect differs from the base image by ${(delta * 100).toFixed(1)}% — check heat alignment.`,
       )
     }
   }

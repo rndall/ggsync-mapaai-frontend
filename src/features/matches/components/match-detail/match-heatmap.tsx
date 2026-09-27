@@ -142,11 +142,10 @@ export function MatchHeatmap({
   }, [points, baseSize])
 
   return (
-    <div className="relative flex h-full flex-col">
+    <div className="flex h-full flex-col gap-3">
       <Tabs
         value={heat}
         onValueChange={(value) => onHeatChange(value as PerMapStatsHeat)}
-        className="absolute inset-x-4 top-4 z-10"
       >
         <TabsList aria-label="Heat calculation" className="w-full">
           <TabsTrigger value="type1">Type1</TabsTrigger>
@@ -197,7 +196,7 @@ export function MatchHeatmap({
         </div>
       </div>
       {(failedRounds > 0 || lowConfidence) && (
-        <div className="flex flex-wrap items-center gap-2 pt-2">
+        <div className="flex flex-wrap items-center gap-2">
           {failedRounds > 0 && (
             <p className="text-xs text-muted-foreground">
               {failedRounds} {failedRounds === 1 ? 'round' : 'rounds'} excluded

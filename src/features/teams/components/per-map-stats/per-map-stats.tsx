@@ -65,7 +65,7 @@ export default function PerMapStats({
   showFilters = true,
   showTitle = true,
 }: PerMapStatsProps) {
-  const { view, side, setSide, heat, setHeat, team, setTeam, map, setMap } =
+  const { view, side, setSide, team, setTeam, map, setMap } =
     usePerMapStatsParams()
 
   // The opponent picker is the only consumer of the team list, so a host that
@@ -177,13 +177,7 @@ export default function PerMapStats({
                 onSelect={onUtilitySelect}
               />
             )}
-            {minimap ?? (
-              <MinimapPlaceholder
-                heat={heat}
-                onHeatChange={(value) => void setHeat(value)}
-                showHeatToggle={view === 'player'}
-              />
-            )}
+            {minimap ?? <MinimapPlaceholder />}
           </div>
         </div>
       </div>

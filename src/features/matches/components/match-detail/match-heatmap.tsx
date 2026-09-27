@@ -1,11 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { NormalizedHeatPoint } from '@/features/matches/analysis-heat'
 import { containPoint } from '@/features/matches/analysis-heat'
 import type { MapCrop } from '@/features/matches/analysis-types'
-import type { PerMapStatsHeat } from '@/features/teams/components/per-map-stats/use-per-map-stats-params'
 
 type MatchHeatmapProps = {
   // Maps API image URL for the match's map (`match.map.image_url`), used as
@@ -14,9 +12,9 @@ type MatchHeatmapProps = {
   mapCrop: MapCrop
   // Already normalized (x / crop.width, y / crop.height) and filtered to the
   // active team lens, the selected side, ok rounds, and the round window.
+  // Player heat is player-position density only; Utility reuses this module
+  // row-driven with the selected utility's points.
   points: Array<NormalizedHeatPoint>
-  heat: PerMapStatsHeat
-  onHeatChange: (value: PerMapStatsHeat) => void
   // Ok rounds where the lens team played the selected side. Zero means the
   // combination was never played and the box shows the explicit empty state.
   matchedRounds: number
@@ -25,31 +23,24 @@ type MatchHeatmapProps = {
   // Labels for the empty-state copy.
   teamLabel: string
   sideLabel: string
-  // The Utility tab reuses this module row-driven without the heat switch:
-  // false hides the Type1/Type2 toggle (Player-tab only) while keeping the
-  // heat URL key intact for deep links. Defaults to true.
-  showHeatToggle?: boolean
-  // Overrides the Player/Event copy (e.g. the selected utility name) for the
-  // aria label and the empty state. Defaults to the heat-derived label.
+  // Overrides the Player copy (e.g. the selected utility name) for the
+  // aria label and the empty state. Defaults to Player.
   heatLabel?: string
 }
 
 // Player heat over the minimap base: base image layer plus canvas density
 // overlay in the same square box as the old placeholder, so arrival causes
-// no reflow. The Utility tab reuses this module row-driven with the toggle
-// hidden and the selected utility name as the label.
+// no reflow. The Utility tab reuses this module row-driven with the selected
+// utility name as the label.
 export function MatchHeatmap({
   baseImageUrl,
   mapCrop,
   points,
-  heat,
-  onHeatChange,
   matchedRounds,
   failedRounds,
   lowConfidence,
   teamLabel,
   sideLabel,
-  showHeatToggle = true,
   heatLabel: heatLabelProp,
 }: MatchHeatmapProps) {
   const boxRef = useRef<HTMLDivElement>(null)
@@ -62,7 +53,7 @@ export function MatchHeatmap({
     height: number
   } | null>(null)
   const isEmpty = points.length === 0
-  const heatLabel = heatLabelProp ?? (heat === 'type1' ? 'Player' : 'Event')
+  const heatLabel = heatLabelProp ?? 'Player'
 
   // A new base URL invalidates the old natural size until it loads, so heat
   // never maps against a stale aspect in between.
@@ -152,17 +143,6 @@ export function MatchHeatmap({
 
   return (
     <div className="flex h-full flex-col gap-3">
-      {showHeatToggle && (
-        <Tabs
-          value={heat}
-          onValueChange={(value) => onHeatChange(value as PerMapStatsHeat)}
-        >
-          <TabsList aria-label="Heat calculation" className="w-full">
-            <TabsTrigger value="type1">Type1</TabsTrigger>
-            <TabsTrigger value="type2">Type2</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      )}
       {/* Same square box as the old placeholder: no layout shift when heat
           arrives. The base keeps its aspect ratio (contain); normalized
           points translate from the analysis crop size into the displayed

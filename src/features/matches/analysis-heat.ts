@@ -2,16 +2,14 @@
 //
 // Heat input rules, agreed in grilling (see `.scratch/match-analysis-heatmap/spec.md`):
 // only rounds with ok status; only points whose timestamp falls within that
-// round's start-to-cutoff window; Player Type1 equals icon types ending in
-// `player`, Player Type2 equals bomb and grenade event types; all heat is
+// round's start-to-cutoff window; Player heat equals icon types ending in
+// `player` (player-position density only); all heat is
 // filtered to the active team lens and to rounds where that team's side
 // matches the selected Attacking/Defending toggle.
 //
 // These helpers are covered implicitly through the team-scoped match view
 // module boundary (the spec's agreed seam), not by unit tests — the repo has
 // no test runner.
-
-import type { PerMapStatsHeat } from '@/features/teams/components/per-map-stats/use-per-map-stats-params'
 
 import type {
   MatchAnalysis,
@@ -61,15 +59,6 @@ export function isPlayerIconType(iconType: string): boolean {
   return iconType.trim().toLowerCase().endsWith('player')
 }
 
-// Bomb and grenade event tracks (e.g. `frag_grenade`, `bomb_plant`).
-// `bomb_carried` markers are carried-state decorations, not events, and are
-// excluded here (and from the utility mix downstream).
-export function isEventIconType(iconType: string): boolean {
-  const normalized = iconType.trim().toLowerCase()
-  if (normalized === 'bomb_carried') return false
-  return normalized.includes('grenade') || normalized.startsWith('bomb')
-}
-
 export function normalizeHeatPoint(
   x: number,
   y: number,
@@ -103,7 +92,6 @@ export function selectPlayerHeatPoints(
   analysis: MatchAnalysis,
   teamColor: TeamSideColor | null,
   side: SideAssignment,
-  heat: PerMapStatsHeat,
 ): PlayerHeatSelection {
   const empty: PlayerHeatSelection = {
     points: [],
@@ -112,9 +100,6 @@ export function selectPlayerHeatPoints(
     lowConfidence: false,
   }
   if (!teamColor) return empty
-
-  const matchesHeat = (iconType: string) =>
-    heat === 'type1' ? isPlayerIconType(iconType) : isEventIconType(iconType)
 
   const selection: PlayerHeatSelection = {
     points: [],
@@ -135,7 +120,7 @@ export function selectPlayerHeatPoints(
     }
     for (const trajectory of round.trajectories) {
       if (trajectory.teamColor !== teamColor) continue
-      if (!matchesHeat(trajectory.iconType)) continue
+      if (!isPlayerIconType(trajectory.iconType)) continue
       for (const point of trajectory.points) {
         if (point.tMs < round.startMs || point.tMs > round.cutoffMs) continue
         selection.points.push(

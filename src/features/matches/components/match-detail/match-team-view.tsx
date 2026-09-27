@@ -113,7 +113,7 @@ function MatchTeamViewContent({
 }) {
   const { matchId } = teamRouteApi.useParams()
   const navigate = teamRouteApi.useNavigate()
-  const { view, side, heat, setHeat } = usePerMapStatsParams()
+  const { view, side } = usePerMapStatsParams()
   const ordered = orderParticipantsBySide(match.participants)
   const active = ordered.find(
     (participant) => participantTeamId(participant) === activeTeamId,
@@ -125,7 +125,8 @@ function MatchTeamViewContent({
   }
 
   // Utility selection is local single-select state, never a URL key, so the
-  // existing view/side/heat/team/map deep links keep working. Null means no
+  // existing view/side/team/map deep links keep working (stale heat keys are
+  // ignored). Null means no
   // explicit pick yet; the active name below falls back to the first derived
   // row (and back to it when lens/side re-aggregates past the old pick).
   const [selectedUtility, setSelectedUtility] = useState<string | null>(null)
@@ -137,9 +138,9 @@ function MatchTeamViewContent({
   const heatSelection = useMemo(
     () =>
       analysis
-        ? selectPlayerHeatPoints(analysis, activeColor, side, heat)
+        ? selectPlayerHeatPoints(analysis, activeColor, side)
         : null,
-    [analysis, activeColor, side, heat],
+    [analysis, activeColor, side],
   )
   // Top Setups aggregate the same ok, side-matched rounds per active-team
   // lens. Memoized alongside heat so switching lens or side re-aggregates the
@@ -176,9 +177,10 @@ function MatchTeamViewContent({
         : null,
     [analysis, activeColor, side, activeUtilityName],
   )
-  // The Player tab swaps the placeholder for live Type1/Type2 heat; the
-  // Utility tab reuses the same module row-driven with the toggle hidden
-  // (Player-tab only) and the selected utility as the label.
+  // The Player tab swaps the placeholder for live player-density heat; the
+  // Utility tab reuses the same module row-driven with the selected utility
+  // as the label.
+  const sideLabel = side === 'attacking' ? 'Attacking' : 'Defending'
   const minimap =
     analysis && heatSelection && utilityHeatSelection ? (
       view === 'player' ? (
@@ -186,27 +188,22 @@ function MatchTeamViewContent({
           baseImageUrl={match.map?.image_url ?? null}
           mapCrop={analysis.mapCrop}
           points={heatSelection.points}
-          heat={heat}
-          onHeatChange={(value) => void setHeat(value)}
           matchedRounds={heatSelection.matchedRounds}
           failedRounds={heatSelection.failedRounds}
           lowConfidence={heatSelection.lowConfidence}
           teamLabel={active.team_name}
-          sideLabel={side === 'attacking' ? 'Attacking' : 'Defending'}
+          sideLabel={sideLabel}
         />
       ) : (
         <MatchHeatmap
           baseImageUrl={match.map?.image_url ?? null}
           mapCrop={analysis.mapCrop}
           points={utilityHeatSelection.points}
-          heat={heat}
-          onHeatChange={(value) => void setHeat(value)}
           matchedRounds={utilityHeatSelection.matchedRounds}
           failedRounds={utilityHeatSelection.failedRounds}
           lowConfidence={utilityHeatSelection.lowConfidence}
           teamLabel={active.team_name}
-          sideLabel={side === 'attacking' ? 'Attacking' : 'Defending'}
-          showHeatToggle={false}
+          sideLabel={sideLabel}
           heatLabel={activeUtilityName ?? 'Utility'}
         />
       )

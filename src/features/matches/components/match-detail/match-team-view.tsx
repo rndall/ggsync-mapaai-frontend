@@ -1,5 +1,5 @@
 import { getRouteApi, Navigate } from '@tanstack/react-router'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { selectPlayerHeatPoints } from '@/features/matches/analysis-heat'
@@ -8,6 +8,11 @@ import type {
   FinalScore,
   MatchAnalysis,
 } from '@/features/matches/analysis-types'
+import type { UtilityHeatSelection } from '@/features/matches/analysis-utility'
+import {
+  selectUtilityHeatPoints,
+  selectUtilityMix,
+} from '@/features/matches/analysis-utility'
 import { MatchScoreHeader } from '@/features/matches/components/match-score-header'
 import type { MatchResource } from '@/features/matches/utils'
 import {
@@ -119,6 +124,12 @@ function MatchTeamViewContent({
     return <MatchDetailError message="Team not found in this match." />
   }
 
+  // Utility selection is local single-select state, never a URL key, so the
+  // existing view/side/heat/team/map deep links keep working. Null means no
+  // explicit pick yet; the active name below falls back to the first derived
+  // row (and back to it when lens/side re-aggregates past the old pick).
+  const [selectedUtility, setSelectedUtility] = useState<string | null>(null)
+
   // Player heat follows the active team lens (by side color) and the selected
   // Attacking/Defending toggle. Memoized so the canvas effect only re-renders
   // when the selection actually changes.
@@ -137,22 +148,68 @@ function MatchTeamViewContent({
     () => (analysis ? selectTopSetups(analysis, activeColor, side) : null),
     [analysis, activeColor, side],
   )
-  // The Player tab swaps the placeholder for live heat; the Utility tab keeps
-  // the placeholder until the row-driven heat ticket reuses this module.
+  // Utility mix derives throw counts plus share from event trajectories under
+  // the same lens-plus-side filter, with bomb markers excluded. Memoized
+  // alongside heat and setups so switching lens or side re-aggregates.
+  const utilityMix = useMemo(
+    () => (analysis ? selectUtilityMix(analysis, activeColor, side) : null),
+    [analysis, activeColor, side],
+  )
+  // Exactly one utility row active: the explicit pick when still present,
+  // else the first derived row so there is always a heat source.
+  const activeUtilityName =
+    selectedUtility &&
+    utilityMix?.rows.some((row) => row.name === selectedUtility)
+      ? selectedUtility
+      : (utilityMix?.rows[0]?.name ?? null)
+  // Utility heat shows the selected utility's points only. Memoized on the
+  // active name so picking a row swaps the minimap layer.
+  const utilityHeatSelection: UtilityHeatSelection | null = useMemo(
+    () =>
+      analysis
+        ? selectUtilityHeatPoints(
+            analysis,
+            activeColor,
+            side,
+            activeUtilityName,
+          )
+        : null,
+    [analysis, activeColor, side, activeUtilityName],
+  )
+  // The Player tab swaps the placeholder for live Type1/Type2 heat; the
+  // Utility tab reuses the same module row-driven with the toggle hidden
+  // (Player-tab only) and the selected utility as the label.
   const minimap =
-    view === 'player' && analysis && heatSelection ? (
-      <MatchHeatmap
-        baseImageUrl={match.map?.image_url ?? null}
-        mapCrop={analysis.mapCrop}
-        points={heatSelection.points}
-        heat={heat}
-        onHeatChange={(value) => void setHeat(value)}
-        matchedRounds={heatSelection.matchedRounds}
-        failedRounds={heatSelection.failedRounds}
-        lowConfidence={heatSelection.lowConfidence}
-        teamLabel={active.team_name}
-        sideLabel={side === 'attacking' ? 'Attacking' : 'Defending'}
-      />
+    analysis && heatSelection && utilityHeatSelection ? (
+      view === 'player' ? (
+        <MatchHeatmap
+          baseImageUrl={match.map?.image_url ?? null}
+          mapCrop={analysis.mapCrop}
+          points={heatSelection.points}
+          heat={heat}
+          onHeatChange={(value) => void setHeat(value)}
+          matchedRounds={heatSelection.matchedRounds}
+          failedRounds={heatSelection.failedRounds}
+          lowConfidence={heatSelection.lowConfidence}
+          teamLabel={active.team_name}
+          sideLabel={side === 'attacking' ? 'Attacking' : 'Defending'}
+        />
+      ) : (
+        <MatchHeatmap
+          baseImageUrl={match.map?.image_url ?? null}
+          mapCrop={analysis.mapCrop}
+          points={utilityHeatSelection.points}
+          heat={heat}
+          onHeatChange={(value) => void setHeat(value)}
+          matchedRounds={utilityHeatSelection.matchedRounds}
+          failedRounds={utilityHeatSelection.failedRounds}
+          lowConfidence={utilityHeatSelection.lowConfidence}
+          teamLabel={active.team_name}
+          sideLabel={side === 'attacking' ? 'Attacking' : 'Defending'}
+          showHeatToggle={false}
+          heatLabel={activeUtilityName ?? 'Utility'}
+        />
+      )
     ) : undefined
 
   const badgeLabel = statusBadgeLabel(match.status)
@@ -206,6 +263,9 @@ function MatchTeamViewContent({
         }
         minimap={minimap}
         setups={topSetups?.setups}
+        utility={utilityMix?.rows}
+        selectedUtility={activeUtilityName}
+        onUtilitySelect={setSelectedUtility}
         mapId={match.map ? String(match.map.id) : undefined}
         showFilters={false}
         showTitle={false}

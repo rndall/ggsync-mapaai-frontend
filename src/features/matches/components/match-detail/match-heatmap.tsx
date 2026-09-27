@@ -25,12 +25,19 @@ type MatchHeatmapProps = {
   // Labels for the empty-state copy.
   teamLabel: string
   sideLabel: string
+  // The Utility tab reuses this module row-driven without the heat switch:
+  // false hides the Type1/Type2 toggle (Player-tab only) while keeping the
+  // heat URL key intact for deep links. Defaults to true.
+  showHeatToggle?: boolean
+  // Overrides the Player/Event copy (e.g. the selected utility name) for the
+  // aria label and the empty state. Defaults to the heat-derived label.
+  heatLabel?: string
 }
 
 // Player heat over the minimap base: base image layer plus canvas density
 // overlay in the same square box as the old placeholder, so arrival causes
-// no reflow. The Utility heat (row-driven, next ticket) reuses this module
-// with its own points.
+// no reflow. The Utility tab reuses this module row-driven with the toggle
+// hidden and the selected utility name as the label.
 export function MatchHeatmap({
   baseImageUrl,
   mapCrop,
@@ -42,6 +49,8 @@ export function MatchHeatmap({
   lowConfidence,
   teamLabel,
   sideLabel,
+  showHeatToggle = true,
+  heatLabel: heatLabelProp,
 }: MatchHeatmapProps) {
   const boxRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -53,7 +62,7 @@ export function MatchHeatmap({
     height: number
   } | null>(null)
   const isEmpty = points.length === 0
-  const heatLabel = heat === 'type1' ? 'Player' : 'Event'
+  const heatLabel = heatLabelProp ?? (heat === 'type1' ? 'Player' : 'Event')
 
   // A new base URL invalidates the old natural size until it loads, so heat
   // never maps against a stale aspect in between.
@@ -143,15 +152,17 @@ export function MatchHeatmap({
 
   return (
     <div className="flex h-full flex-col gap-3">
-      <Tabs
-        value={heat}
-        onValueChange={(value) => onHeatChange(value as PerMapStatsHeat)}
-      >
-        <TabsList aria-label="Heat calculation" className="w-full">
-          <TabsTrigger value="type1">Type1</TabsTrigger>
-          <TabsTrigger value="type2">Type2</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {showHeatToggle && (
+        <Tabs
+          value={heat}
+          onValueChange={(value) => onHeatChange(value as PerMapStatsHeat)}
+        >
+          <TabsList aria-label="Heat calculation" className="w-full">
+            <TabsTrigger value="type1">Type1</TabsTrigger>
+            <TabsTrigger value="type2">Type2</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      )}
       {/* Same square box as the old placeholder: no layout shift when heat
           arrives. The base keeps its aspect ratio (contain); normalized
           points translate from the analysis crop size into the displayed

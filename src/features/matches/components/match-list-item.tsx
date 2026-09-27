@@ -79,6 +79,7 @@ export default function MatchListItem({
               <div className="flex min-w-0 flex-1 flex-col items-center gap-2 px-2">
                 <TeamAvatar
                   name={participant.name}
+                  logoUrl={participant.logo}
                   fallbackClassName="text-lg"
                 />
                 <p className="text-center uppercase">{participant.name}</p>

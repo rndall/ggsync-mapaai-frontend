@@ -207,13 +207,13 @@ function ScoreSide({
   const selected = teamId !== null && teamId === activeTeamId
 
   // `mirror` flips the avatar to the trailing edge so one component serves
-  // both ends of the bar. Match participants expose no logo yet, so only the
-  // initials fallback renders until the resource carries one.
+  // both ends of the bar.
   const content = (
     <>
       {!mirror && (
         <TeamAvatar
           name={name}
+          logoUrl={participant?.logo_url}
           className="sm:size-16"
           fallbackClassName="font-heading text-base"
         />
@@ -224,6 +224,7 @@ function ScoreSide({
       {mirror && (
         <TeamAvatar
           name={name}
+          logoUrl={participant?.logo_url}
           className="sm:size-16"
           fallbackClassName="font-heading text-base"
         />

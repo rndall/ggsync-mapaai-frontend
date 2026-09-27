@@ -32,7 +32,7 @@ const statusBadgeLabels: Record<string, string> = {
 export type MatchCardParticipant = {
   teamId: string
   name: string
-  // logo: string | null
+  logo: string | null
 }
 
 // Minimal presentational props for a match card; the route maps API
@@ -215,7 +215,7 @@ export function toMatchCard(match: MatchResource): MatchCard {
         // Route params are strings, so the numeric participant id is coerced.
         teamId: String(participant.team_id),
         name: participant.team_name,
-        // logo: participant.logo_url,
+        logo: participant.logo_url,
       })),
   }
 }

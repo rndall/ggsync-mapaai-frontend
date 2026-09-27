@@ -1,3 +1,4 @@
+import type { TeamSideColor } from '@/features/matches/analysis-types'
 import type { MatchResource } from '@/features/matches/utils'
 import { compareParticipantsBySide } from '@/features/matches/utils'
 
@@ -27,6 +28,17 @@ export function isMatchParticipant(
   return participants.some(
     (participant) => participantTeamId(participant) === teamId,
   )
+}
+
+// Side color of one participant, or null when the record carries an
+// unrecognized color. Heat filtering needs the lens color, and a null lens
+// renders the heat empty state rather than another team's read.
+export function participantSideColor(
+  participant: MatchParticipant,
+): TeamSideColor | null {
+  const normalized = participant.color?.trim().toLowerCase()
+  if (normalized === 'blue' || normalized === 'red') return normalized
+  return null
 }
 
 // Canonical auto-pick for an address that does not name a valid team: the

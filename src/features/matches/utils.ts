@@ -98,6 +98,16 @@ export function mapBackground(mapName: string | null): MapBackground | null {
   }
 }
 
+// STAND-IN (swap for the Map API minimap image when its endpoint exists):
+// the per-map base under the heat canvas. Until then the bundled map art for
+// the slug stands in, so the heat box still keys off the match's own map
+// with no network dependency — mirroring the analysis mock fallback. This is
+// the single swap point for going live.
+export function minimapBaseUrl(mapSlug: string | null): string | null {
+  if (!mapSlug) return null
+  return mapBackground(mapSlug)?.url ?? null
+}
+
 // Played time in short day/date/month/time form (the project's date library
 // is date-fns); '' when there is no usable timestamp.
 export function formatCardDate(timestamp: string | null): string {

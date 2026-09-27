@@ -26,6 +26,10 @@ type PerMapStatsProps = {
   // and a host that brings its own brings its own switch. The match page
   // passes the score header, which carries both.
   header?: ReactNode
+  // Minimap override. A supplied node replaces the blank placeholder box —
+  // the match view passes the live analysis heatmap while every other host
+  // keeps the placeholder until its own data lands.
+  minimap?: ReactNode
   // Pins the read to one map, overriding the URL. A host that already knows
   // the map has no picker left to set it with, so without this it would
   // silently report the first map in the list instead of its own.
@@ -40,6 +44,7 @@ type PerMapStatsProps = {
 
 export default function PerMapStats({
   header,
+  minimap,
   mapId,
   showFilters = true,
   showTitle = true,
@@ -151,11 +156,13 @@ export default function PerMapStats({
             ) : (
               <UtilityStats stats={sideStats} />
             )}
-            <MinimapPlaceholder
-              heat={heat}
-              onHeatChange={(value) => void setHeat(value)}
-              showHeatToggle={view === 'player'}
-            />
+            {minimap ?? (
+              <MinimapPlaceholder
+                heat={heat}
+                onHeatChange={(value) => void setHeat(value)}
+                showHeatToggle={view === 'player'}
+              />
+            )}
           </div>
         </div>
       </div>

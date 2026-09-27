@@ -1,7 +1,12 @@
 import { getRouteApi, Navigate } from '@tanstack/react-router'
+import { useMemo } from 'react'
 
 import { Badge } from '@/components/ui/badge'
-import type { FinalScore } from '@/features/matches/analysis-types'
+import { selectPlayerHeatPoints } from '@/features/matches/analysis-heat'
+import type {
+  FinalScore,
+  MatchAnalysis,
+} from '@/features/matches/analysis-types'
 import { MatchScoreHeader } from '@/features/matches/components/match-score-header'
 import type { MatchResource } from '@/features/matches/utils'
 import {
@@ -11,15 +16,18 @@ import {
 } from '@/features/matches/utils'
 import PerMapStats from '@/features/teams/components/per-map-stats/per-map-stats'
 import { PerMapStatsViewTabs } from '@/features/teams/components/per-map-stats/per-map-stats-view-tabs'
+import { usePerMapStatsParams } from '@/features/teams/components/per-map-stats/use-per-map-stats-params'
 
 import {
   MatchDetailEmpty,
   MatchDetailError,
   MatchDetailLoading,
 } from './match-detail-feedback'
+import { MatchHeatmap } from './match-heatmap'
 import {
   isMatchParticipant,
   orderParticipantsBySide,
+  participantSideColor,
   participantTeamId,
   pickPerspectiveTeamId,
 } from './match-perspective'
@@ -69,19 +77,19 @@ export function MatchTeamView() {
     )
   }
 
-  // Real final score only for a ready match with resolved analysis; pending,
-  // processing, failed, or errored analysis keeps the header's fallback
-  // treatment so the scoreline never blanks or zeroes.
-  const finalScore: FinalScore | null =
-    match.status === 'ready'
-      ? (matchAnalysisQuery.data?.finalScore ?? null)
-      : null
+  // Real analysis only for a ready match; pending, processing, failed, or
+  // errored analysis keeps every fallback treatment so the page never reads
+  // mock-shaped data with no analysis behind it.
+  const analysis: MatchAnalysis | null =
+    match.status === 'ready' ? (matchAnalysisQuery.data ?? null) : null
+  const finalScore: FinalScore | null = analysis?.finalScore ?? null
 
   return (
     <MatchTeamViewContent
       match={match}
       activeTeamId={teamId}
       finalScore={finalScore}
+      analysis={analysis}
     />
   )
 }
@@ -90,13 +98,16 @@ function MatchTeamViewContent({
   match,
   activeTeamId,
   finalScore,
+  analysis,
 }: {
   match: MatchResource
   activeTeamId: string
   finalScore: FinalScore | null
+  analysis: MatchAnalysis | null
 }) {
   const { matchId } = teamRouteApi.useParams()
   const navigate = teamRouteApi.useNavigate()
+  const { view, side, heat, setHeat } = usePerMapStatsParams()
   const ordered = orderParticipantsBySide(match.participants)
   const active = ordered.find(
     (participant) => participantTeamId(participant) === activeTeamId,
@@ -106,6 +117,35 @@ function MatchTeamViewContent({
   if (!active) {
     return <MatchDetailError message="Team not found in this match." />
   }
+
+  // Player heat follows the active team lens (by side color) and the selected
+  // Attacking/Defending toggle. Memoized so the canvas effect only re-renders
+  // when the selection actually changes.
+  const activeColor = participantSideColor(active)
+  const heatSelection = useMemo(
+    () =>
+      analysis
+        ? selectPlayerHeatPoints(analysis, activeColor, side, heat)
+        : null,
+    [analysis, activeColor, side, heat],
+  )
+  // The Player tab swaps the placeholder for live heat; the Utility tab keeps
+  // the placeholder until the row-driven heat ticket reuses this module.
+  const minimap =
+    view === 'player' && analysis && heatSelection ? (
+      <MatchHeatmap
+        mapSlug={analysis.mapSlug}
+        mapCrop={analysis.mapCrop}
+        points={heatSelection.points}
+        heat={heat}
+        onHeatChange={(value) => void setHeat(value)}
+        matchedRounds={heatSelection.matchedRounds}
+        failedRounds={heatSelection.failedRounds}
+        lowConfidence={heatSelection.lowConfidence}
+        teamLabel={active.team_name}
+        sideLabel={side === 'attacking' ? 'Attacking' : 'Defending'}
+      />
+    ) : undefined
 
   const badgeLabel = statusBadgeLabel(match.status)
   const mapName = match.map?.name ? capitalizeWords(match.map.name) : '—'
@@ -156,6 +196,7 @@ function MatchTeamViewContent({
             className="rounded-none border-0"
           />
         }
+        minimap={minimap}
         mapId={match.map ? String(match.map.id) : undefined}
         showFilters={false}
         showTitle={false}

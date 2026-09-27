@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import MatchItem from '@/features/matches/components/match-item'
 import { mapQueries, matchQueries } from '@/features/matches/queries'
+import { usePerMapStatsParams } from '@/features/teams/components/per-map-stats/use-per-map-stats-params'
 
 import UploadMatchDrawer from './upload-match-drawer'
 
@@ -24,16 +25,27 @@ export default function MatchHistory() {
   const teamIdNumber = Number(teamId)
   const hasTeam = Number.isFinite(teamIdNumber)
 
-  // The team-matches endpoint requires a map filter; with no filter UI yet,
-  // fall back to the first available map.
+  // Shares the Per Map Stats map selection (?map=) so the history lists
+  // matches for the selected map. Same fallback as PerMapStats: a missing
+  // or stale id resolves to the first available map.
   const mapsQuery = useQuery(mapQueries.list())
-  const firstMapId = mapsQuery.data?.data[0]?.id
+  const { map: mapParam } = usePerMapStatsParams()
+  const maps = mapsQuery.data?.data ?? []
+  const selectedMapId = maps.some(
+    (option) => String(option.id) === mapParam,
+  )
+    ? mapParam
+    : maps[0] !== undefined
+      ? String(maps[0].id)
+      : ''
+  const selectedMapIdNumber = Number(selectedMapId)
 
   const matchesQuery = useQuery({
     ...matchQueries.teamList(hasTeam ? teamIdNumber : 0, {
-      map_id: firstMapId ?? 0,
+      map_id: selectedMapIdNumber,
     }),
-    enabled: hasTeam && firstMapId !== undefined,
+    enabled:
+      hasTeam && selectedMapId !== '' && Number.isFinite(selectedMapIdNumber),
   })
   const matches = matchesQuery.data?.data.matches ?? []
 

@@ -8,6 +8,7 @@ export type RotationSplit = {
 export type SiteSetup = {
   a: number
   b: number
+  mid: number
   pct: number
 }
 
@@ -39,11 +40,11 @@ export const PER_MAP_STATS_MOCK: PerMapStats = {
     // The mockup's loss split sums to 94; hardcoded corrected to sum to 100.
     rotationAfterLoss: { stay: 24, switch: 76 },
     setups: [
-      { a: 3, b: 2, pct: 18 },
-      { a: 0, b: 5, pct: 15 },
-      { a: 2, b: 3, pct: 13 },
-      { a: 5, b: 0, pct: 12 },
-      { a: 4, b: 1, pct: 10 },
+      { a: 3, b: 2, mid: 0, pct: 18 },
+      { a: 0, b: 5, mid: 0, pct: 15 },
+      { a: 2, b: 3, mid: 0, pct: 13 },
+      { a: 5, b: 0, mid: 0, pct: 12 },
+      { a: 4, b: 1, mid: 0, pct: 10 },
     ],
     utility: [
       { name: 'Smoke', count: 5, pct: 50 },
@@ -55,11 +56,11 @@ export const PER_MAP_STATS_MOCK: PerMapStats = {
     rotationAfterWin: { stay: 71, switch: 29 },
     rotationAfterLoss: { stay: 31, switch: 69 },
     setups: [
-      { a: 2, b: 3, pct: 21 },
-      { a: 3, b: 2, pct: 17 },
-      { a: 1, b: 4, pct: 14 },
-      { a: 4, b: 1, pct: 11 },
-      { a: 0, b: 5, pct: 9 },
+      { a: 2, b: 3, mid: 0, pct: 21 },
+      { a: 3, b: 2, mid: 0, pct: 17 },
+      { a: 1, b: 4, mid: 0, pct: 14 },
+      { a: 4, b: 1, mid: 0, pct: 11 },
+      { a: 0, b: 5, mid: 0, pct: 9 },
     ],
     utility: [
       { name: 'Smoke', count: 4, pct: 40 },

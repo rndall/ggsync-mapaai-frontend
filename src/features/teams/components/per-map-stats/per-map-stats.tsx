@@ -9,6 +9,7 @@ import { teamQueries } from '@/features/teams/queries'
 import { MinimapPlaceholder } from './minimap-placeholder'
 import { PerMapStatsBanner } from './per-map-banner'
 import { PerMapStatsFilters } from './per-map-stats-filters'
+import type { SiteSetup } from './per-map-stats-mock'
 import { PER_MAP_STATS_MOCK } from './per-map-stats-mock'
 import { PerMapStatsViewTabs } from './per-map-stats-view-tabs'
 import { PlayerStats } from './player-stats'
@@ -34,6 +35,11 @@ type PerMapStatsProps = {
   // the map has no picker left to set it with, so without this it would
   // silently report the first map in the list instead of its own.
   mapId?: string
+  // Derived Top Setups rows for the match view. Undefined keeps the mock
+  // slice (team pages and pending/failed analysis); a defined array — even
+  // empty — renders the live aggregation so the list re-aggregates per
+  // lens-plus-side with failed rounds excluded.
+  setups?: Array<SiteSetup>
   // The Team and Map pickers only make sense where the read is not already
   // scoped; a match fixes both on its own.
   showFilters?: boolean
@@ -46,6 +52,7 @@ export default function PerMapStats({
   header,
   minimap,
   mapId,
+  setups,
   showFilters = true,
   showTitle = true,
 }: PerMapStatsProps) {
@@ -152,7 +159,7 @@ export default function PerMapStats({
           </Tabs>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {view === 'player' ? (
-              <PlayerStats stats={sideStats} />
+              <PlayerStats stats={sideStats} setups={setups} />
             ) : (
               <UtilityStats stats={sideStats} />
             )}

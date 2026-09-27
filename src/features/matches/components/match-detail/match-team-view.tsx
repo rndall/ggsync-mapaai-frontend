@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { selectPlayerHeatPoints } from '@/features/matches/analysis-heat'
+import { selectTopSetups } from '@/features/matches/analysis-setups'
 import type {
   FinalScore,
   MatchAnalysis,
@@ -129,6 +130,13 @@ function MatchTeamViewContent({
         : null,
     [analysis, activeColor, side, heat],
   )
+  // Top Setups aggregate the same ok, side-matched rounds per active-team
+  // lens. Memoized alongside heat so switching lens or side re-aggregates the
+  // list while failed rounds stay excluded.
+  const topSetups = useMemo(
+    () => (analysis ? selectTopSetups(analysis, activeColor, side) : null),
+    [analysis, activeColor, side],
+  )
   // The Player tab swaps the placeholder for live heat; the Utility tab keeps
   // the placeholder until the row-driven heat ticket reuses this module.
   const minimap =
@@ -197,6 +205,7 @@ function MatchTeamViewContent({
           />
         }
         minimap={minimap}
+        setups={topSetups?.setups}
         mapId={match.map ? String(match.map.id) : undefined}
         showFilters={false}
         showTitle={false}

@@ -83,12 +83,16 @@ export function MatchTeamView() {
     )
   }
 
-  // Real analysis only for a ready match; pending, processing, failed, or
-  // errored analysis keeps every fallback treatment so the page never reads
-  // mock-shaped data with no analysis behind it.
-  const analysis: MatchAnalysis | null =
-    match.status === 'ready' ? (matchResultsQuery.data ?? null) : null
-  const finalScore: FinalScore | null = analysis?.finalScore ?? null
+  if (match.status !== 'ready' || matchResultsQuery.isPending) {
+    return <MatchDetailLoading />
+  }
+  if (matchResultsQuery.isError) {
+    return <MatchDetailError />
+  }
+  if (!matchResultsQuery.data) return <MatchDetailLoading />
+
+  const analysis: MatchAnalysis = matchResultsQuery.data
+  const finalScore: FinalScore = analysis.finalScore
 
   return (
     <MatchTeamViewContent
@@ -108,7 +112,7 @@ function MatchTeamViewContent({
 }: {
   match: MatchResource
   activeTeamId: string
-  finalScore: FinalScore | null
+  finalScore: FinalScore
   analysis: MatchAnalysis | null
 }) {
   const { matchId } = teamRouteApi.useParams()

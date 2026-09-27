@@ -18,10 +18,6 @@ import type { PerMapStatsSide } from './use-per-map-stats-params'
 import { usePerMapStatsParams } from './use-per-map-stats-params'
 import { UtilityStats } from './utility-stats'
 
-// MOCK (replace with the real per-map stats endpoint): the headline win rate
-// stays hardcoded until the stats API exists.
-const MAP_WIN_PCT = 100
-
 type PerMapStatsProps = {
   // Header furniture override. A supplied header replaces the map banner AND
   // the panel's own Player/Utility switch, since both belong to the header
@@ -171,7 +167,7 @@ export default function PerMapStats({
           <>
             <PerMapStatsBanner
               mapName={selectedMap?.name ?? null}
-              winPct={MAP_WIN_PCT}
+              winPct={PER_MAP_STATS_MOCK.winPct}
               className="rounded-none border-0"
             />
             {/* The tabs straddle the banner's bottom edge, inset from the left

@@ -14,13 +14,6 @@ import {
   participantTeamId,
 } from './match-detail/match-perspective'
 
-// Fallback while the match is not ready or no analysis is available: the
-// match resource carries no score, so both numbers are fixed for the layout
-// review. They follow the blue-first side order used everywhere else, which
-// keeps each number attached to the team it belongs to. Never render blank
-// or zeroed — the owner passes a real `finalScore` once it exists.
-const MOCK_SCORES = { blue: 4, red: 2 } satisfies FinalScore
-
 // Each end of the score bar is the perspective switch, so the whole side —
 // avatar and name — is one button filling its track. Selected and hover are
 // separate variants over one shared base, so either treatment can be retuned
@@ -58,10 +51,8 @@ type MatchScoreHeaderProps = {
   // so the owner keeps control of replace-versus-push.
   activeTeamId: string
   onTeamChange: (teamId: string) => void
-  // Real final score from the analysis payload, keyed by side color. Nullish
-  // keeps the fallback treatment so a pending/processing/failed analysis never
-  // blanks or zeroes the scoreline.
-  finalScore?: FinalScore | null
+  // Real final score from the analysis payload, keyed by side color.
+  finalScore: FinalScore
   // View controls, rendered in the strip under the score bar. Passed in rather
   // than built here so the header stays presentational and the owning view
   // decides what its tabs mean.
@@ -83,12 +74,14 @@ export function MatchScoreHeader({
   const background = mapBackground(match.map?.name ?? null)
   const ordered = orderParticipantsBySide(match.participants)
   const [left, right] = ordered
-  // Real score when the owner supplies one, fallback otherwise. Each number
-  // is resolved by that side's color (blue-first order), never by the active
-  // lens, so switching teams keeps each score attached to its team.
-  const scores = finalScore ?? MOCK_SCORES
-  const leftScore = scoreForSideColor(left?.color, scores, scores.blue)
-  const rightScore = scoreForSideColor(right?.color, scores, scores.red)
+  // Each number is resolved by its side color, never by the active lens, so
+  // switching teams keeps each score attached to its team.
+  const leftScore = scoreForSideColor(left?.color, finalScore, finalScore.blue)
+  const rightScore = scoreForSideColor(
+    right?.color,
+    finalScore,
+    finalScore.red,
+  )
 
   return (
     <header

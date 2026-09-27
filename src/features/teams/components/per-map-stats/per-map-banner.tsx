@@ -55,10 +55,10 @@ export function PerMapStatsBanner({
         <h3 className="font-heading text-3xl uppercase sm:text-4xl">
           {displayName}
         </h3>
-        <div className="sm:text-center">
+        {/* <div className="sm:text-center">
           <p className="font-heading text-4xl sm:text-5xl">{winPct}%</p>
           <p className="text-sm text-primary">Map Win %</p>
-        </div>
+        </div> */}
       </div>
     </div>
   )

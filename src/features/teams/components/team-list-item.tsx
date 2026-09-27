@@ -76,7 +76,7 @@ export default function TeamListItem({
         <ItemTitle className="font-heading text-xl">{name}</ItemTitle>
         <ItemDescription className="text-base">{description}</ItemDescription>
       </ItemContent>
-      <ItemContent className="items-center px-5">
+      {/* <ItemContent className="items-center px-5">
         <span className="font-heading text-2xl leading-none font-black">
           97%
         </span>
@@ -93,7 +93,7 @@ export default function TeamListItem({
         >
           <EllipsisVertical className="size-4" />
         </Button>
-      </ItemActions>
+      </ItemActions> */}
     </Item>
   )
 }

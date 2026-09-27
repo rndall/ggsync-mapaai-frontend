@@ -46,9 +46,9 @@ export const PER_MAP_STATS_MOCK: PerMapStats = {
       { a: 4, b: 1, pct: 10 },
     ],
     utility: [
-      { name: 'Smoke', count: 5, pct: 50 },
-      { name: 'Frag', count: 3, pct: 30 },
-      { name: 'Concussion', count: 2, pct: 20 },
+      { name: 'Smoke', count: 1, pct: 33 },
+      { name: 'Frag', count: 1, pct: 33 },
+      { name: 'Concussion', count: 1, pct: 33 },
     ],
   },
   defending: {
@@ -62,9 +62,9 @@ export const PER_MAP_STATS_MOCK: PerMapStats = {
       { a: 0, b: 5, pct: 9 },
     ],
     utility: [
-      { name: 'Smoke', count: 4, pct: 40 },
-      { name: 'Frag', count: 4, pct: 40 },
-      { name: 'Concussion', count: 2, pct: 20 },
+      // { name: 'Smoke', count: 4, pct: 40 },
+      // { name: 'Frag', count: 4, pct: 40 },
+      // { name: 'Concussion', count: 2, pct: 20 },
     ],
   },
 }

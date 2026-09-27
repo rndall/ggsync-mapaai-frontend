@@ -144,7 +144,8 @@ export function historyStatusLabel(status: MatchResource['status']): string {
     case 'failed':
       return 'Failed'
     case 'ready':
-      return 'Ready'
+      return 'Victory'
+    // return 'Ready'
     default:
       return status
   }

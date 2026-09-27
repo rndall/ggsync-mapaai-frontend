@@ -37,8 +37,8 @@ import {
   participantTeamId,
   pickPerspectiveTeamId,
 } from './match-perspective'
-import { useMatchAnalysisQuery } from './use-match-analysis-query'
 import { useMatchQuery } from './use-match-query'
+import { useMatchResultsQuery } from './use-match-results-query'
 
 const teamRouteApi = getRouteApi('/_authed/matches/$matchId/$teamId')
 
@@ -49,11 +49,11 @@ const teamRouteApi = getRouteApi('/_authed/matches/$matchId/$teamId')
 export function MatchTeamView() {
   const { teamId } = teamRouteApi.useParams()
   const { matchIdNumber, matchQuery } = useMatchQuery()
-  // Resolved (and cached) for every numeric match id so downstream slices —
-  // real final score, heat, setups, utility — read one shared result.
-  // Disabled for non-numeric ids, mirroring the match detail guard. Resolving
-  // here keeps the seam at this view.
-  const { matchAnalysisQuery } = useMatchAnalysisQuery()
+  // Resolved (and cached) for every numeric match/team pair so downstream
+  // slices — real final score, heat, setups, utility — read one shared
+  // result. Disabled for non-numeric ids, mirroring the match detail guard.
+  // Resolving here keeps the seam at this view.
+  const { matchResultsQuery } = useMatchResultsQuery()
 
   if (!Number.isFinite(matchIdNumber)) {
     return <MatchDetailError message="Match not found." />
@@ -87,7 +87,7 @@ export function MatchTeamView() {
   // errored analysis keeps every fallback treatment so the page never reads
   // mock-shaped data with no analysis behind it.
   const analysis: MatchAnalysis | null =
-    match.status === 'ready' ? (matchAnalysisQuery.data ?? null) : null
+    match.status === 'ready' ? (matchResultsQuery.data ?? null) : null
   const finalScore: FinalScore | null = analysis?.finalScore ?? null
 
   return (
@@ -137,9 +137,7 @@ function MatchTeamViewContent({
   const activeColor = participantSideColor(active)
   const heatSelection = useMemo(
     () =>
-      analysis
-        ? selectPlayerHeatPoints(analysis, activeColor, side)
-        : null,
+      analysis ? selectPlayerHeatPoints(analysis, activeColor, side) : null,
     [analysis, activeColor, side],
   )
   // Top Setups aggregate the same ok, side-matched rounds per active-team

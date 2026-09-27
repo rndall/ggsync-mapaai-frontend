@@ -1,30 +1,35 @@
-import { queryOptions } from '@tanstack/react-query'
+import { $api } from '@/lib/api'
 
-import { SAMPLE_MATCH_ANALYSIS } from './analysis-mock'
+import { normalizeMatchResults } from './analysis-mapper'
 import type { MatchAnalysis } from './analysis-types'
+import type { MatchResults } from './match-results-types'
 
 // Per-match analysis query, alongside `matchQueries.detail` in
-// `./queries.ts`: same match identifier in, analysis payload out.
+// `./queries.ts`: match plus team identifiers in, normalized analysis out.
 //
-// Today the fetcher serves the typed sample payload with no network
-// dependency. When the backend `GET /matches/{match}/analysis` endpoint
-// exists, only `fetchMatchAnalysis` changes to call it (via `fetchClient`)
-// and map the response onto `MatchAnalysis` — the query key and the consumer
-// call shape (`useQuery(matchAnalysisQueries.detail(id))`) stay unchanged,
-// so no route or component change is needed to go live.
-async function fetchMatchAnalysis(matchId: number): Promise<MatchAnalysis> {
-  // Per-match identity: the mock stands in for every match, stamped with the
-  // requested id so consumers can treat it as this match's result.
-  return { ...SAMPLE_MATCH_ANALYSIS, matchId }
-}
-
+// Backed by `GET /matches/{match}/results`, scoped to the active team
+// (`team_id`) with `icons: 'both'` so player and utility trajectories arrive
+// in one request and share one cache entry. The `select` normalizes the lossy
+// generated OpenAPI shape into the frontend `MatchAnalysis` contract — the
+// single cast to `MatchResults` happens here at the query boundary. A `null`
+// data payload means the match is still processing, so `select` returns
+// `null` and consumers render their loading treatment (no polling on 409).
 export const matchAnalysisQueries = {
-  detail: (id: number) =>
-    queryOptions({
-      queryKey: ['matches', id, 'analysis'],
-      queryFn: () => fetchMatchAnalysis(id),
-      // The mock is static local data; keep it cached indefinitely until the
-      // live endpoint (with its own staleness) arrives.
-      staleTime: Infinity,
-    }),
+  detail: (matchId: number, teamId: number) =>
+    $api.queryOptions(
+      'get',
+      '/matches/{match}/results',
+      {
+        params: {
+          path: { match: matchId },
+          query: { team_id: teamId, icons: 'both' },
+        },
+      },
+      {
+        select: (response): MatchAnalysis | null =>
+          normalizeMatchResults(
+            response.data as unknown as MatchResults | null,
+          ),
+      },
+    ),
 }

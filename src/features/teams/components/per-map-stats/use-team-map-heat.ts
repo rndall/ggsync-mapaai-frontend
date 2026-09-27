@@ -68,7 +68,9 @@ export function useTeamMapHeat({
   const readyMatches = matches.filter((match) => match.status === 'ready')
 
   const analysisQueries = useQueries({
-    queries: readyMatches.map((match) => matchAnalysisQueries.detail(match.id)),
+    queries: readyMatches.map((match) =>
+      matchAnalysisQueries.detail(match.id, teamIdNumber),
+    ),
   })
   const analysesPending = analysisQueries.some((query) => query.isPending)
   // A failed per-match fetch must not render partial heat as complete: any

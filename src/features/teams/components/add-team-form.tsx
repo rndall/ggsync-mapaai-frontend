@@ -13,6 +13,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
 import { Textarea } from '@/components/ui/textarea'
+import { toast } from '@/components/ui/toast'
 import { useCreateTeam } from '@/features/teams/hooks/use-create-team'
 import type { operations } from '@/types/api'
 import {
@@ -96,18 +97,29 @@ export default function AddTeamForm({ onSuccess }: AddTeamFormProps) {
             form.reset()
             setServerErrors({})
             setFormError(null)
+            toast.add({
+              type: 'success',
+              title: 'Team created',
+              description: `"${value.name.trim()}" has been added.`,
+              timeout: 5000,
+            })
             onSuccess?.()
           },
           onError: (error) => {
             const fieldErrors = getFieldErrors(error)
             setServerErrors(fieldErrors)
             if (Object.keys(fieldErrors).length === 0) {
-              setFormError(
-                getErrorMessage(
-                  error,
-                  'Could not create the team. Please try again.',
-                ),
+              const message = getErrorMessage(
+                error,
+                'Could not create the team. Please try again.',
               )
+              setFormError(message)
+              toast.add({
+                type: 'error',
+                title: 'Could not create team',
+                description: message,
+                timeout: 5000,
+              })
             }
           },
         },

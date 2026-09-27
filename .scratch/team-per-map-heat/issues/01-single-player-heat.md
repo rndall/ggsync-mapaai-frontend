@@ -4,9 +4,13 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] No heat calculation toggle renders on the team panel Player tab nor on the match view Player tab
-- [ ] Player heat shows player-position density only; event density no longer renders as a separate toggleable layer
-- [ ] Utility tab behavior unchanged: selected row's points only, no toggle
-- [ ] Side and view controls keep filtering as before; links with a stale heat key load ignoring it
+- [x] No heat calculation toggle renders on the team panel Player tab nor on the match view Player tab
+- [x] Player heat shows player-position density only; event density no longer renders as a separate toggleable layer
+- [x] Utility tab behavior unchanged: selected row's points only, no toggle
+- [x] Side and view controls keep filtering as before; links with a stale heat key load ignoring it
+
+## Comments
+
+- Implemented in `eacf73b`: removed Type1/Type2 toggle UI and `heat` URL key in team and match views; `selectPlayerHeatPoints` is player-position density only; stale `?heat=` keys ignored.

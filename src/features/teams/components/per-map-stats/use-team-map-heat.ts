@@ -2,7 +2,10 @@ import { useQueries, useQuery } from '@tanstack/react-query'
 
 import type { NormalizedHeatPoint } from '@/features/matches/analysis-heat'
 import { matchAnalysisQueries } from '@/features/matches/analysis-queries'
-import { selectTeamMapHeat } from '@/features/matches/analysis-team-heat'
+import {
+  selectTeamMapHeat,
+  selectTeamUtilityHeat,
+} from '@/features/matches/analysis-team-heat'
 import type { MapCrop, SideAssignment } from '@/features/matches/analysis-types'
 import { matchQueries } from '@/features/matches/queries'
 
@@ -14,6 +17,10 @@ type UseTeamMapHeatInput = {
   // maps list resolves to the first available map.
   mapId: string
   side: SideAssignment
+  // Utility mode selector. Undefined renders player-density heat; a string
+  // (or null for no selection yet) renders that utility row's points only
+  // under the same round, window, lens, and side filter.
+  utilityName?: string | null
 }
 
 export type TeamMapHeatResult = {
@@ -34,12 +41,14 @@ export type TeamMapHeatResult = {
 
 // Query seam behind the team Per Map Stats panel: the detail team's matches
 // for the selected map plus one per-match analysis each, aggregated into a
-// single player-density read. A future backend per-map heat endpoint replaces
+// single player-density read (or, when `utilityName` is supplied, into that
+// utility row's layer). A future backend per-map heat endpoint replaces
 // only this hook — the panel keeps reading the same shape.
 export function useTeamMapHeat({
   teamId,
   mapId,
   side,
+  utilityName,
 }: UseTeamMapHeatInput): TeamMapHeatResult {
   const teamIdNumber = Number(teamId)
   const mapIdNumber = Number(mapId)
@@ -77,7 +86,15 @@ export function useTeamMapHeat({
   })
 
   const aggregated = hasTeam
-    ? selectTeamMapHeat(matches, analysesByMatchId, String(teamId), side)
+    ? utilityName !== undefined
+      ? selectTeamUtilityHeat(
+          matches,
+          analysesByMatchId,
+          String(teamId),
+          side,
+          utilityName,
+        )
+      : selectTeamMapHeat(matches, analysesByMatchId, String(teamId), side)
     : { points: [], matchedRounds: 0, failedRounds: 0, lowConfidence: false }
 
   const firstCrop: MapCrop | undefined = analysisQueries.find(

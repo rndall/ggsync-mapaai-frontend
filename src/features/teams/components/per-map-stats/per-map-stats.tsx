@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
+import { useState } from 'react'
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -92,6 +93,36 @@ export default function PerMapStats({
   // All numbers below the banner are typed hardcoded mocks until the stats
   // endpoint exists; the side toggle only swaps which mock slice renders.
   const sideStats = PER_MAP_STATS_MOCK[side]
+  // Team-page utility selection is local single-select state, never a URL
+  // key, mirroring the match view. The mock rows never change per map, so
+  // the pick persists across map/side flips and falls back to the first row
+  // when stale. The match view stays controlled via its own props.
+  const utilityRows = utility ?? sideStats.utility
+  const isUtilityControlled =
+    selectedUtility !== undefined || onUtilitySelect !== undefined
+  const [teamUtilityPick, setTeamUtilityPick] = useState<string | null>(null)
+  const teamActiveUtility =
+    teamUtilityPick && utilityRows.some((row) => row.name === teamUtilityPick)
+      ? teamUtilityPick
+      : (utilityRows[0]?.name ?? null)
+  // Heat follows the same active row the table highlights: the controlled
+  // name when the host drives selection, else the team-page local pick, so
+  // picking a row swaps the minimap layer.
+  const heatUtilityName = isUtilityControlled
+    ? selectedUtility && utilityRows.some((row) => row.name === selectedUtility)
+      ? selectedUtility
+      : (utilityRows[0]?.name ?? null)
+    : teamActiveUtility
+  const teamUtilitySelected = isUtilityControlled
+    ? selectedUtility
+    : teamId && !minimap
+      ? teamActiveUtility
+      : undefined
+  const teamUtilityOnSelect = isUtilityControlled
+    ? onUtilitySelect
+    : teamId && !minimap
+      ? setTeamUtilityPick
+      : undefined
 
   if (mapsQuery.isPending) {
     return (
@@ -168,25 +199,38 @@ export default function PerMapStats({
               <UtilityStats
                 stats={sideStats}
                 rows={utility}
-                selected={selectedUtility}
-                onSelect={onUtilitySelect}
+                selected={teamUtilitySelected}
+                onSelect={teamUtilityOnSelect}
               />
             )}
             {/* The match view drives this slot itself. The team page leaves
-                it undefined: the Player tab renders live per-map heat over
-                the selected map's minimap base (dark box with heat only when
-                the base image is missing), while the Utility tab keeps the
-                placeholder until its row-driven heat lands. The grid keeps
-                stacking at narrow widths either way. */}
+                it undefined: the Player tab renders live per-map player
+                heat over the selected map's minimap base, while the
+                Utility tab renders the same module row-driven with the
+                selected utility row's points only (picking a row swaps the
+                layer). Missing base images fall back to the dark box with
+                heat only. The grid keeps stacking at narrow widths either
+                way. */}
             {minimap ??
-              (teamId && view === 'player' ? (
-                <TeamMapHeat
-                  teamId={teamId}
-                  mapId={selectedMapId}
-                  baseImageUrl={selectedMap?.image_url ?? null}
-                  mapName={selectedMap?.name ?? null}
-                  side={side}
-                />
+              (teamId ? (
+                view === 'player' ? (
+                  <TeamMapHeat
+                    teamId={teamId}
+                    mapId={selectedMapId}
+                    baseImageUrl={selectedMap?.image_url ?? null}
+                    mapName={selectedMap?.name ?? null}
+                    side={side}
+                  />
+                ) : (
+                  <TeamMapHeat
+                    teamId={teamId}
+                    mapId={selectedMapId}
+                    baseImageUrl={selectedMap?.image_url ?? null}
+                    mapName={selectedMap?.name ?? null}
+                    side={side}
+                    utilityName={heatUtilityName}
+                  />
+                )
               ) : (
                 <MinimapPlaceholder />
               ))}

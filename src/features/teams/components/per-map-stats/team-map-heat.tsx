@@ -16,17 +16,24 @@ type TeamMapHeatProps = {
   baseImageUrl: string | null
   mapName: string | null
   side: PerMapStatsSide
+  // Utility mode selector. Undefined renders player-density heat; a string
+  // (or null for no selection yet) renders that utility row's points only
+  // with the row name as the heat label. Picking a row swaps the layer.
+  utilityName?: string | null
 }
 
-// Live per-map player-density heat for the team detail panel. The map
-// dropdown drives the base plus the density together: switching maps switches
-// both. Left-column numbers stay mocked; only this minimap box goes live.
+// Live per-map heat for the team detail panel. The map dropdown drives the
+// base plus the density together: switching maps switches both. Player heat
+// is player-position density only; Utility reuses this module row-driven with
+// the selected utility name. Left-column numbers stay mocked; only this
+// minimap box goes live.
 export function TeamMapHeat({
   teamId,
   mapId,
   baseImageUrl,
   mapName,
   side,
+  utilityName,
 }: TeamMapHeatProps) {
   const teamIdNumber = Number(teamId)
   const teamQuery = useQuery({
@@ -35,8 +42,12 @@ export function TeamMapHeat({
   })
   const teamLabel = teamQuery.data?.data.name ?? 'This team'
 
-  const heat = useTeamMapHeat({ teamId, mapId, side })
+  const heat = useTeamMapHeat({ teamId, mapId, side, utilityName })
   const sideLabel = side === 'attacking' ? 'Attacking' : 'Defending'
+  // Utility mode labels the read with the selected row; Player keeps the
+  // shared module's default. Null (no selection yet) falls back to Utility.
+  const heatLabel =
+    utilityName !== undefined ? (utilityName ?? 'Utility') : undefined
 
   // Pending heat keeps the blank square box so arrival causes no reflow —
   // the same box the placeholder held.
@@ -75,6 +86,7 @@ export function TeamMapHeat({
 
   // Matches exist: the shared heatmap module carries the density plus the
   // unplayed lens-plus-side empty copy, the failure note, and the badge.
+  // Utility mode passes the row name so the empty copy reads per-utility.
   return (
     <MatchHeatmap
       baseImageUrl={baseImageUrl}
@@ -85,6 +97,7 @@ export function TeamMapHeat({
       lowConfidence={heat.lowConfidence}
       teamLabel={teamLabel}
       sideLabel={sideLabel}
+      heatLabel={heatLabel}
     />
   )
 }

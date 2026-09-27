@@ -19,6 +19,7 @@ import type {
   SideAssignment,
   TeamSideColor,
 } from './analysis-types'
+import { selectUtilityHeatPoints } from './analysis-utility'
 import type { MatchResource } from './utils'
 
 export type TeamMapHeat = {
@@ -69,6 +70,49 @@ export function selectTeamMapHeat(
     const analysis = analysesByMatchId.get(match.id)
     if (!analysis) continue
     const perMatch = selectPlayerHeatPoints(analysis, teamColor, side)
+    selection.points.push(...perMatch.points)
+    selection.matchedRounds += perMatch.matchedRounds
+    selection.failedRounds += perMatch.failedRounds
+    if (perMatch.lowConfidence) selection.lowConfidence = true
+  }
+
+  return selection
+}
+
+// TeamMapHeat doubles as the utility-heat payload: the same round, window,
+// lens, and side filter applies, only the point source narrows to the
+// selected utility row's event type (null counts matched rounds with no
+// points, mirroring the per-match selector).
+export function selectTeamUtilityHeat(
+  matches: Array<MatchResource>,
+  analysesByMatchId: Map<number, MatchAnalysis | null | undefined>,
+  detailTeamId: string,
+  side: SideAssignment,
+  utilityName: string | null,
+): TeamMapHeat {
+  const selection: TeamMapHeat = {
+    points: [],
+    matchedRounds: 0,
+    failedRounds: 0,
+    lowConfidence: false,
+  }
+
+  for (const match of matches) {
+    if (match.status !== 'ready') continue
+    const participant = match.participants.find(
+      (entry) => String(entry.team_id) === detailTeamId,
+    )
+    if (!participant) continue
+    const teamColor = teamLensColor(participant.color)
+    if (!teamColor) continue
+    const analysis = analysesByMatchId.get(match.id)
+    if (!analysis) continue
+    const perMatch = selectUtilityHeatPoints(
+      analysis,
+      teamColor,
+      side,
+      utilityName,
+    )
     selection.points.push(...perMatch.points)
     selection.matchedRounds += perMatch.matchedRounds
     selection.failedRounds += perMatch.failedRounds

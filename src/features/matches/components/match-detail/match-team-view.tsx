@@ -134,7 +134,7 @@ function MatchTeamViewContent({
   const minimap =
     view === 'player' && analysis && heatSelection ? (
       <MatchHeatmap
-        mapSlug={analysis.mapSlug}
+        baseImageUrl={match.map?.image_url ?? null}
         mapCrop={analysis.mapCrop}
         points={heatSelection.points}
         heat={heat}

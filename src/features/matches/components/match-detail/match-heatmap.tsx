@@ -4,11 +4,12 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { NormalizedHeatPoint } from '@/features/matches/analysis-heat'
 import type { MapCrop } from '@/features/matches/analysis-types'
-import { minimapBaseUrl } from '@/features/matches/utils'
 import type { PerMapStatsHeat } from '@/features/teams/components/per-map-stats/use-per-map-stats-params'
 
 type MatchHeatmapProps = {
-  mapSlug: string | null
+  // Maps API image URL for the match's map (`match.map.image_url`), used as
+  // the heat canvas base. Null renders the dark box with heat only.
+  baseImageUrl: string | null
   mapCrop: MapCrop
   // Already normalized (x / crop.width, y / crop.height) and filtered to the
   // active team lens, the selected side, ok rounds, and the round window.
@@ -30,7 +31,7 @@ type MatchHeatmapProps = {
 // no reflow. The Utility heat (row-driven, next ticket) reuses this module
 // with its own points.
 export function MatchHeatmap({
-  mapSlug,
+  baseImageUrl,
   mapCrop,
   points,
   heat,
@@ -43,7 +44,6 @@ export function MatchHeatmap({
 }: MatchHeatmapProps) {
   const boxRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const baseUrl = minimapBaseUrl(mapSlug)
   const isEmpty = points.length === 0
   const heatLabel = heat === 'type1' ? 'Player' : 'Event'
 
@@ -143,13 +143,13 @@ export function MatchHeatmap({
         }
         className="relative aspect-square w-full flex-1 overflow-hidden rounded-lg border bg-background/70"
       >
-        {baseUrl && (
+        {baseImageUrl && (
           <img
-            src={baseUrl}
+            src={baseImageUrl}
             alt=""
             aria-hidden
             draggable={false}
-            onLoad={handleBaseLoad(mapSlug, mapCrop)}
+            onLoad={handleBaseLoad(mapCrop)}
             className="absolute inset-0 h-full w-full object-fill"
           />
         )}
@@ -217,7 +217,7 @@ function heatRamp(t: number): [number, number, number] {
 // Dev-only guard for the stretch assumption: the observed Tunisia delta
 // (processing frame versus minimap base) is ~1.6% in height, so only a
 // future map past ~5% aspect delta warns.
-function handleBaseLoad(mapSlug: string | null, mapCrop: MapCrop) {
+function handleBaseLoad(mapCrop: MapCrop) {
   return (event: React.SyntheticEvent<HTMLImageElement>) => {
     if (!import.meta.env.DEV) return
     const img = event.currentTarget
@@ -234,7 +234,7 @@ function handleBaseLoad(mapSlug: string | null, mapCrop: MapCrop) {
     const delta = Math.abs(cropAspect - baseAspect) / baseAspect
     if (delta > 0.05) {
       console.warn(
-        `[heatmap] map "${mapSlug ?? 'unknown'}" crop aspect differs from the base image by ${(delta * 100).toFixed(1)}% — normalized stretch may distort positions.`,
+        `[heatmap] map crop aspect differs from the base image by ${(delta * 100).toFixed(1)}% — normalized stretch may distort positions.`,
       )
     }
   }

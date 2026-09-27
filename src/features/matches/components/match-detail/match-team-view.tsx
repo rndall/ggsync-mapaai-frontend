@@ -22,6 +22,7 @@ import {
   participantTeamId,
   pickPerspectiveTeamId,
 } from './match-perspective'
+import { useMatchAnalysisQuery } from './use-match-analysis-query'
 import { useMatchQuery } from './use-match-query'
 
 const teamRouteApi = getRouteApi('/_authed/matches/$matchId/$teamId')
@@ -33,6 +34,11 @@ const teamRouteApi = getRouteApi('/_authed/matches/$matchId/$teamId')
 export function MatchTeamView() {
   const { teamId } = teamRouteApi.useParams()
   const { matchIdNumber, matchQuery } = useMatchQuery()
+  // Resolved (and cached) for every numeric match id so downstream slices —
+  // real final score, heat, setups, utility — read one shared result.
+  // Disabled for non-numeric ids, mirroring the match detail guard. The data
+  // is consumed by later tickets; resolving here keeps the seam at this view.
+  useMatchAnalysisQuery()
 
   if (!Number.isFinite(matchIdNumber)) {
     return <MatchDetailError message="Match not found." />

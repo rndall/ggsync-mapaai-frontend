@@ -3,9 +3,11 @@ import type {
   RotationSplit,
   SiteSetup,
 } from './per-map-stats-mock'
+import type { PerMapStatsSide } from './use-per-map-stats-params'
 
 type PlayerStatsProps = {
   stats: PerMapSideStats
+  side: PerMapStatsSide
   // Derived setup rows for the match view. Undefined keeps the typed mock
   // slice (team pages and pending/failed analysis); a defined array — even
   // empty — renders the live read so lens-plus-side re-aggregates and failed
@@ -13,24 +15,26 @@ type PlayerStatsProps = {
   setups?: Array<SiteSetup>
 }
 
-export function PlayerStats({ stats, setups }: PlayerStatsProps) {
+export function PlayerStats({ stats, side, setups }: PlayerStatsProps) {
   const rows = setups ?? stats.setups
   return (
     <div className="flex flex-col gap-4">
-      <section
-        aria-label="Rotation Odds"
-        className="flex flex-col gap-4 rounded-lg border bg-muted/20 p-4 sm:p-6"
-      >
-        <h3 className="font-heading text-lg">Rotation Odds</h3>
-        <RotationRow
-          label="Behavior After a Win"
-          split={stats.rotationAfterWin}
-        />
-        <RotationRow
-          label="Behavior After a Loss"
-          split={stats.rotationAfterLoss}
-        />
-      </section>
+      {side === 'attacking' && (
+        <section
+          aria-label="Rotation Odds"
+          className="flex flex-col gap-4 rounded-lg border bg-muted/20 p-4 sm:p-6"
+        >
+          <h3 className="font-heading text-lg">Rotation Odds</h3>
+          <RotationRow
+            label="Behavior After a Win"
+            split={stats.rotationAfterWin}
+          />
+          <RotationRow
+            label="Behavior After a Loss"
+            split={stats.rotationAfterLoss}
+          />
+        </section>
+      )}
       <section
         aria-label="Top site setups"
         className="flex flex-col gap-2 rounded-lg border bg-muted/20 p-4 sm:p-6"

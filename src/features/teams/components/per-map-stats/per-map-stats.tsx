@@ -168,7 +168,7 @@ export default function PerMapStats({
           </Tabs>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {view === 'player' ? (
-              <PlayerStats stats={sideStats} setups={setups} />
+              <PlayerStats stats={sideStats} side={side} setups={setups} />
             ) : (
               <UtilityStats
                 stats={sideStats}

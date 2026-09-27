@@ -12,6 +12,7 @@ import type { SiteSetup, UtilityMixRow } from './per-map-stats-mock'
 import { PER_MAP_STATS_MOCK } from './per-map-stats-mock'
 import { PerMapStatsViewTabs } from './per-map-stats-view-tabs'
 import { PlayerStats } from './player-stats'
+import { TeamMapHeat } from './team-map-heat'
 import type { PerMapStatsSide } from './use-per-map-stats-params'
 import { usePerMapStatsParams } from './use-per-map-stats-params'
 import { UtilityStats } from './utility-stats'
@@ -26,9 +27,9 @@ type PerMapStatsProps = {
   // and a host that brings its own brings its own switch. The match page
   // passes the score header, which carries both.
   header?: ReactNode
-  // Minimap override. A supplied node replaces the blank placeholder box —
-  // the match view passes the live analysis heatmap while every other host
-  // keeps the placeholder until its own data lands.
+  // Minimap override. A supplied node replaces the team heat box — the
+  // match view passes the live analysis heatmap while the team page leaves
+  // it undefined so the Player tab can render its own per-map heat.
   minimap?: ReactNode
   // Pins the read to one map, overriding the URL. A host that already knows
   // the map has no picker left to set it with, so without this it would
@@ -51,6 +52,11 @@ type PerMapStatsProps = {
   // The heading only makes sense where the panel stands alone; a match
   // already frames the context with its own title and score header.
   showTitle?: boolean
+  // Detail-team route id for the team page. When present (and no minimap
+  // override is supplied), the Player tab renders live per-map heat scoped
+  // to this team; the match page leaves it undefined and drives the
+  // minimap slot itself.
+  teamId?: string
 }
 
 export default function PerMapStats({
@@ -63,6 +69,7 @@ export default function PerMapStats({
   onUtilitySelect,
   showFilters = true,
   showTitle = true,
+  teamId,
 }: PerMapStatsProps) {
   const { view, side, setSide, map, setMap } = usePerMapStatsParams()
 
@@ -165,7 +172,24 @@ export default function PerMapStats({
                 onSelect={onUtilitySelect}
               />
             )}
-            {minimap ?? <MinimapPlaceholder />}
+            {/* The match view drives this slot itself. The team page leaves
+                it undefined: the Player tab renders live per-map heat over
+                the selected map's minimap base (dark box with heat only when
+                the base image is missing), while the Utility tab keeps the
+                placeholder until its row-driven heat lands. The grid keeps
+                stacking at narrow widths either way. */}
+            {minimap ??
+              (teamId && view === 'player' ? (
+                <TeamMapHeat
+                  teamId={teamId}
+                  mapId={selectedMapId}
+                  baseImageUrl={selectedMap?.image_url ?? null}
+                  mapName={selectedMap?.name ?? null}
+                  side={side}
+                />
+              ) : (
+                <MinimapPlaceholder />
+              ))}
           </div>
         </div>
       </div>

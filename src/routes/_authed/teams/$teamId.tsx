@@ -25,6 +25,7 @@ export const Route = createFileRoute('/_authed/teams/$teamId')({
 })
 
 function RouteComponent() {
+  const { teamId } = Route.useParams()
   return (
     <div className="space-y-6">
       <Link
@@ -41,7 +42,7 @@ function RouteComponent() {
         <Suspense fallback={<TeamHeadingSkeleton />}>
           <TeamHeading />
         </Suspense>
-        <PerMapStats />
+        <PerMapStats teamId={teamId} />
       </div>
       <MatchHistory />
     </div>

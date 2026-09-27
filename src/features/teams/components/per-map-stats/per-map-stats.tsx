@@ -4,7 +4,6 @@ import type { ReactNode } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { mapQueries } from '@/features/matches/queries'
-import { teamQueries } from '@/features/teams/queries'
 
 import { MinimapPlaceholder } from './minimap-placeholder'
 import { PerMapStatsBanner } from './per-map-banner'
@@ -46,8 +45,8 @@ type PerMapStatsProps = {
   utility?: Array<UtilityMixRow>
   selectedUtility?: string | null
   onUtilitySelect?: (name: string) => void
-  // The Team and Map pickers only make sense where the read is not already
-  // scoped; a match fixes both on its own.
+  // The Map picker only makes sense where the read is not already
+  // scoped; a match fixes the map on its own.
   showFilters?: boolean
   // The heading only makes sense where the panel stands alone; a match
   // already frames the context with its own title and score header.
@@ -65,18 +64,10 @@ export default function PerMapStats({
   showFilters = true,
   showTitle = true,
 }: PerMapStatsProps) {
-  const { view, side, setSide, team, setTeam, map, setMap } =
-    usePerMapStatsParams()
+  const { view, side, setSide, map, setMap } = usePerMapStatsParams()
 
-  // The opponent picker is the only consumer of the team list, so a host that
-  // hides the filters must neither fetch it nor block on it.
-  const teamsQuery = useQuery({
-    ...teamQueries.options(),
-    enabled: showFilters,
-  })
   const mapsQuery = useQuery(mapQueries.list())
 
-  const teams = teamsQuery.data?.data ?? []
   const maps = mapsQuery.data?.data ?? []
   // No map chosen (or a stale id in the URL) falls back to the first
   // available map. A host-supplied mapId is authoritative and falls back the
@@ -95,13 +86,13 @@ export default function PerMapStats({
   // endpoint exists; the side toggle only swaps which mock slice renders.
   const sideStats = PER_MAP_STATS_MOCK[side]
 
-  if (mapsQuery.isPending || (showFilters && teamsQuery.isPending)) {
+  if (mapsQuery.isPending) {
     return (
       <PerMapStatsSkeleton showFilters={showFilters} showTitle={showTitle} />
     )
   }
 
-  if (mapsQuery.isError || (showFilters && teamsQuery.isError)) {
+  if (mapsQuery.isError) {
     return (
       <section
         aria-label="Per Map Stats"
@@ -123,15 +114,12 @@ export default function PerMapStats({
       {(showTitle || showFilters) && (
         <div className="flex flex-wrap items-end justify-between gap-4">
           {showTitle && <h2 className="font-heading text-xl">Per Map Stats</h2>}
-          {/* The team page scopes the read by picking a slice. The match page
-            has no such choice: the match already fixes both teams and the
-            map, so a picker there would only offer a wrong answer. */}
+          {/* The team page scopes the read by picking a map. The match page
+            has no such choice: the match already fixes the map, so a picker
+            there would only offer a wrong answer. */}
           {showFilters && (
             <PerMapStatsFilters
-              teams={teams}
               maps={maps}
-              team={team}
-              onTeamChange={(value) => void setTeam(value)}
               mapId={selectedMapId}
               onMapChange={(value) => void setMap(value)}
             />
@@ -202,7 +190,6 @@ function PerMapStatsSkeleton({
           {showTitle && <Skeleton className="h-7 w-44" />}
           {showFilters && (
             <div className="flex flex-wrap gap-3">
-              <Skeleton className="h-9 w-44" />
               <Skeleton className="h-9 w-44" />
             </div>
           )}

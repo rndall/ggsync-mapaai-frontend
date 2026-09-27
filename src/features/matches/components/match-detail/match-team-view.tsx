@@ -125,8 +125,8 @@ function MatchTeamViewContent({
   }
 
   // Utility selection is local single-select state, never a URL key, so the
-  // existing view/side/team/map deep links keep working (stale heat keys are
-  // ignored). Null means no
+  // existing view/side/map deep links keep working (stale heat or team keys
+  // are ignored). Null means no
   // explicit pick yet; the active name below falls back to the first derived
   // row (and back to it when lens/side re-aggregates past the old pick).
   const [selectedUtility, setSelectedUtility] = useState<string | null>(null)

@@ -6,7 +6,11 @@
 
 **Status:** ready-for-agent
 
-- [ ] Match view resolves analysis for a numeric match id and stays disabled for non-numeric ids.
-- [ ] Analysis shape covers map slug, crop width/height, final score per side, and rounds with status, side, zone splits, and trajectories (prototype shape: `MatchAnalysis { mapSlug, mapCrop, finalScore, rounds[] }` with `Round { status, side, teamSplit, trajectories[] }`).
-- [ ] Sample payload loads as the mock fallback with no network dependency.
-- [ ] Query shape accepts the future `GET /matches/{match}/analysis` swap with no consumer change.
+- [x] Match view resolves analysis for a numeric match id and stays disabled for non-numeric ids.
+- [x] Analysis shape covers map slug, crop width/height, final score per side, and rounds with status, side, zone splits, and trajectories (prototype shape: `MatchAnalysis { mapSlug, mapCrop, finalScore, rounds[] }` with `Round { status, side, teamSplit, trajectories[] }`).
+- [x] Sample payload loads as the mock fallback with no network dependency.
+- [x] Query shape accepts the future `GET /matches/{match}/analysis` swap with no consumer change.
+
+## Comments
+
+- Implemented in `066b3fe`: `src/features/matches/analysis-types.ts` (contract), `analysis-mock.ts` (`SAMPLE_MATCH_ANALYSIS`), `analysis-queries.ts` (`matchAnalysisQueries.detail(id)`, key `['matches', id, 'analysis']`), `use-match-analysis-query.ts` (enabled on numeric ids only), wired into `MatchTeamView`. Verified via tsc/eslint/prettier plus a runtime shape check; no test runner in repo.

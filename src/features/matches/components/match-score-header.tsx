@@ -3,6 +3,7 @@ import { cn } from 'cn'
 import type { ReactNode } from 'react'
 
 import { Badge } from '@/components/ui/badge'
+import type { FinalScore } from '@/features/matches/analysis-types'
 import type { MatchResource } from '@/features/matches/utils'
 import { mapBackground } from '@/features/matches/utils'
 import { TeamAvatar } from '@/features/teams/components/team-avatar'
@@ -13,11 +14,12 @@ import {
   participantTeamId,
 } from './match-detail/match-perspective'
 
-// MOCK (replace with the real round totals from the stats endpoint): the
+// Fallback while the match is not ready or no analysis is available: the
 // match resource carries no score, so both numbers are fixed for the layout
 // review. They follow the blue-first side order used everywhere else, which
-// keeps each number attached to the team it belongs to.
-const MOCK_SCORES = { blue: 4, red: 2 }
+// keeps each number attached to the team it belongs to. Never render blank
+// or zeroed — the owner passes a real `finalScore` once it exists.
+const MOCK_SCORES = { blue: 4, red: 2 } satisfies FinalScore
 
 // Each end of the score bar is the perspective switch, so the whole side —
 // avatar and name — is one button filling its track. Selected and hover are
@@ -56,6 +58,10 @@ type MatchScoreHeaderProps = {
   // so the owner keeps control of replace-versus-push.
   activeTeamId: string
   onTeamChange: (teamId: string) => void
+  // Real final score from the analysis payload, keyed by side color. Nullish
+  // keeps the fallback treatment so a pending/processing/failed analysis never
+  // blanks or zeroes the scoreline.
+  finalScore?: FinalScore | null
   // View controls, rendered in the strip under the score bar. Passed in rather
   // than built here so the header stays presentational and the owning view
   // decides what its tabs mean.
@@ -70,12 +76,19 @@ export function MatchScoreHeader({
   match,
   activeTeamId,
   onTeamChange,
+  finalScore,
   tabs,
   className,
 }: MatchScoreHeaderProps) {
   const background = mapBackground(match.map?.name ?? null)
   const ordered = orderParticipantsBySide(match.participants)
   const [left, right] = ordered
+  // Real score when the owner supplies one, fallback otherwise. Each number
+  // is resolved by that side's color (blue-first order), never by the active
+  // lens, so switching teams keeps each score attached to its team.
+  const scores = finalScore ?? MOCK_SCORES
+  const leftScore = scoreForSideColor(left?.color, scores, scores.blue)
+  const rightScore = scoreForSideColor(right?.color, scores, scores.red)
 
   return (
     <header
@@ -131,11 +144,11 @@ export function MatchScoreHeader({
           />
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <span className="font-heading text-3xl tabular-nums sm:text-4xl">
-              {MOCK_SCORES.blue}
+              {leftScore}
             </span>
             <Badge className="font-button">vs</Badge>
             <span className="font-heading text-3xl tabular-nums sm:text-4xl">
-              {MOCK_SCORES.red}
+              {rightScore}
             </span>
           </div>
           <ScoreSide
@@ -158,6 +171,21 @@ export function MatchScoreHeader({
       )}
     </header>
   )
+}
+
+// Side-keyed score lookup: the number follows the participant's side color,
+// not its bar position or the active lens. Unknown colors fall back to the
+// positional value (blue-first order), so the scoreline never blanks.
+function scoreForSideColor(
+  color: string | undefined,
+  scores: FinalScore,
+  positionalFallback: number,
+): number {
+  const normalized = color?.trim().toLowerCase()
+  if (normalized === 'blue' || normalized === 'red') {
+    return scores[normalized]
+  }
+  return positionalFallback
 }
 
 function ScoreSide({

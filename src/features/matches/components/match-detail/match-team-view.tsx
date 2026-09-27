@@ -1,6 +1,7 @@
 import { getRouteApi, Navigate } from '@tanstack/react-router'
 
 import { Badge } from '@/components/ui/badge'
+import type { FinalScore } from '@/features/matches/analysis-types'
 import { MatchScoreHeader } from '@/features/matches/components/match-score-header'
 import type { MatchResource } from '@/features/matches/utils'
 import {
@@ -36,9 +37,9 @@ export function MatchTeamView() {
   const { matchIdNumber, matchQuery } = useMatchQuery()
   // Resolved (and cached) for every numeric match id so downstream slices —
   // real final score, heat, setups, utility — read one shared result.
-  // Disabled for non-numeric ids, mirroring the match detail guard. The data
-  // is consumed by later tickets; resolving here keeps the seam at this view.
-  useMatchAnalysisQuery()
+  // Disabled for non-numeric ids, mirroring the match detail guard. Resolving
+  // here keeps the seam at this view.
+  const { matchAnalysisQuery } = useMatchAnalysisQuery()
 
   if (!Number.isFinite(matchIdNumber)) {
     return <MatchDetailError message="Match not found." />
@@ -68,15 +69,31 @@ export function MatchTeamView() {
     )
   }
 
-  return <MatchTeamViewContent match={match} activeTeamId={teamId} />
+  // Real final score only for a ready match with resolved analysis; pending,
+  // processing, failed, or errored analysis keeps the header's fallback
+  // treatment so the scoreline never blanks or zeroes.
+  const finalScore: FinalScore | null =
+    match.status === 'ready'
+      ? (matchAnalysisQuery.data?.finalScore ?? null)
+      : null
+
+  return (
+    <MatchTeamViewContent
+      match={match}
+      activeTeamId={teamId}
+      finalScore={finalScore}
+    />
+  )
 }
 
 function MatchTeamViewContent({
   match,
   activeTeamId,
+  finalScore,
 }: {
   match: MatchResource
   activeTeamId: string
+  finalScore: FinalScore | null
 }) {
   const { matchId } = teamRouteApi.useParams()
   const navigate = teamRouteApi.useNavigate()
@@ -134,6 +151,7 @@ function MatchTeamViewContent({
             match={match}
             activeTeamId={activeTeamId}
             onTeamChange={handleTeamChange}
+            finalScore={finalScore}
             tabs={<PerMapStatsViewTabs />}
             className="rounded-none border-0"
           />

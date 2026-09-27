@@ -8,7 +8,9 @@ import MatchItemGroup, {
 } from '@/features/matches/components/match-item-group'
 import { matchQueries } from '@/features/matches/queries'
 import { toMatchCard } from '@/features/matches/utils'
-import TeamList, { TeamListFallback } from '@/features/teams/components/team-list'
+import TeamList, {
+  TeamListFallback,
+} from '@/features/teams/components/team-list'
 import { teamQueries } from '@/features/teams/queries'
 
 import DashboardBackground from './-components/dashboard-background'
@@ -39,7 +41,7 @@ function RouteComponent() {
       <div className="relative z-10 flex flex-col gap-14 p-12">
         <div className="mt-45">
           <h1 className="w-sm font-heading text-3xl">
-            Explore the latest updates and insights.
+            See your latest analyzed matches.
           </h1>
         </div>
         <div className="flex flex-col gap-4">
